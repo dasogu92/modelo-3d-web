@@ -2,24 +2,86 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Modelo 3D CLO3D</title>
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modelo 3D Avanzado</title>
+    <script type="module"
+        src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+    </script>
     <style>
-        body { margin: 0; padding: 0; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: linear-gradient(135deg, #e09, #d0e, #90e);
+            background-size: 400% 400%;
+            animation: fondoAnimado 10s ease infinite;
+            overflow: hidden;
+        }
+        @keyframes fondoAnimado {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
         model-viewer {
             width: 100%;
             height: 100vh;
-            background-color: #f0f0f0;
+            --poster-color: transparent;
+        }
+        .instrucciones {
+            position: absolute; 
+            z-index: 10; 
+            color: white; 
+            padding: 10px; 
+            font-family: Arial;
+        }
+        .descargar-btn {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background-color: rgba(0,0,0,0.6);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-family: Arial;
         }
     </style>
 </head>
 <body>
+    <div class="instrucciones">
+        ⬅️ Usa el ratón o los dedos para girar, acercar y alejar el modelo.<br>
+        🔄 Doble clic para reiniciar la vista original.
+    </div>
+
     <model-viewer 
+        id="modelo3D"
         src="CAMISETA.glb" 
         alt="Modelo CLO3D" 
         camera-controls 
         auto-rotate 
-        ar>
+        ar
+        shadow-intensity="1"
+        exposure="1"
+        field-of-view="45deg">
+
+        <!-- Iluminación adicional -->
+        <light intensity="1.2" color="#ffffff" position="-1 2 4" type="directional"></light>
+        <light intensity="0.8" color="#ffffff" position="1 -2 -4" type="directional"></light>
+        <ambient-light intensity="0.5"></ambient-light>
+
     </model-viewer>
+
+    <a href="CAMISETA.glb" download class="descargar-btn">
+        ⬇️ Descargar modelo
+    </a>
+
+    <script>
+        // Reiniciar cámara al hacer doble clic
+        const modelo = document.getElementById('modelo3D');
+        modelo.addEventListener('dblclick', () => {
+            modelo.cameraOrbit = modelo.getAttribute('camera-orbit');
+            modelo.resetTurntableRotation();
+        });
+    </script>
 </body>
 </html>
