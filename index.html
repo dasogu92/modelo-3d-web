@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelo 3D Avanzado</title>
+    <title>Modelo 3D Ajustado</title>
     <script type="module"
         src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
     </script>
@@ -11,15 +11,9 @@
         body { 
             margin: 0; 
             padding: 0; 
-            background: linear-gradient(135deg, #e09, #d0e, #90e);
-            background-size: 400% 400%;
-            animation: fondoAnimado 10s ease infinite;
+            background: #f0f0f0; /* Fondo gris claro */
             overflow: hidden;
-        }
-        @keyframes fondoAnimado {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            font-family: Arial, sans-serif;
         }
         model-viewer {
             width: 100%;
@@ -29,9 +23,9 @@
         .instrucciones {
             position: absolute; 
             z-index: 10; 
-            color: white; 
+            color: #333; 
             padding: 10px; 
-            font-family: Arial;
+            font-size: 14px;
         }
         .descargar-btn {
             position: absolute;
@@ -43,7 +37,7 @@
             color: white;
             text-decoration: none;
             border-radius: 10px;
-            font-family: Arial;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -62,12 +56,15 @@
         ar
         shadow-intensity="1"
         exposure="1"
-        field-of-view="45deg">
+        field-of-view="45deg"
+        camera-orbit="0deg 75deg 120%"
+        min-camera-orbit="auto auto 50%"
+        max-camera-orbit="auto auto 200%">
 
         <!-- Iluminación adicional -->
-        <light intensity="1.2" color="#ffffff" position="-1 2 4" type="directional"></light>
-        <light intensity="0.8" color="#ffffff" position="1 -2 -4" type="directional"></light>
-        <ambient-light intensity="0.5"></ambient-light>
+        <light intensity="1" color="#ffffff" position="-1 2 4" type="directional"></light>
+        <light intensity="0.6" color="#ffffff" position="1 -2 -4" type="directional"></light>
+        <ambient-light intensity="0.6"></ambient-light>
 
     </model-viewer>
 
@@ -78,8 +75,10 @@
     <script>
         // Reiniciar cámara al hacer doble clic
         const modelo = document.getElementById('modelo3D');
+        const camaraOriginal = modelo.getAttribute('camera-orbit');
+        
         modelo.addEventListener('dblclick', () => {
-            modelo.cameraOrbit = modelo.getAttribute('camera-orbit');
+            modelo.cameraOrbit = camaraOriginal;
             modelo.resetTurntableRotation();
         });
     </script>
