@@ -11,7 +11,7 @@
         body { 
             margin: 0; 
             padding: 0; 
-            background: #f0f0f0; /* Fondo gris claro */
+            background: #f0f0f0; 
             overflow: hidden;
             font-family: Arial, sans-serif;
         }
@@ -57,11 +57,10 @@
         shadow-intensity="1"
         exposure="1"
         field-of-view="45deg"
-        camera-orbit="0deg 75deg 120%"
+        camera-orbit="0deg 75deg 200%"
         min-camera-orbit="auto auto 50%"
         max-camera-orbit="auto auto 200%">
 
-        <!-- Iluminación adicional -->
         <light intensity="1" color="#ffffff" position="-1 2 4" type="directional"></light>
         <light intensity="0.6" color="#ffffff" position="1 -2 -4" type="directional"></light>
         <ambient-light intensity="0.6"></ambient-light>
@@ -73,7 +72,6 @@
     </a>
 
     <script>
-        // Reiniciar cámara al hacer doble clic
         const modelo = document.getElementById('modelo3D');
         const camaraOriginal = modelo.getAttribute('camera-orbit');
         
