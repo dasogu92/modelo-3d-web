@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Modelo 3D CLO3D</title>
+    <script type="module" 
+        src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
+    </script>
+    <style>
+        body { margin: 0; padding: 0; }
+        model-viewer {
+            width: 100%;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <model-viewer 
+        src="CAMISETA.glb" 
+        alt="Modelo CLO3D" 
+        camera-controls 
+        auto-rotate 
+        ar>
+    </model-viewer>
+</body>
+</html>
