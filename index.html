@@ -1,61 +1,189 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelo 3D con texturas dinámicas</title>
-    <script type="module"
-        src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
-    </script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #f0f0f0;
-            overflow: hidden;
-        }
-        model-viewer {
-            width: 100%;
-            height: 100vh;
-        }
-        .btn-cambiar-textura {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            padding: 8px 12px;
-            font-family: Arial;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visor 3D Avanzado</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+
+    model-viewer {
+      width: 100vw;
+      height: 100vh;
+      --poster-color: transparent;
+    }
+
+    .panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      max-width: 300px;
+    }
+
+    .panel label {
+      font-weight: bold;
+      font-size: 13px;
+      margin-top: 10px;
+      display: block;
+    }
+
+    .panel input[type="range"],
+    .panel input[type="color"],
+    .panel input[type="file"] {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .exportar {
+      margin-top: 10px;
+      padding: 8px;
+      width: 100%;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .exportar:hover {
+      background: #555;
+    }
+  </style>
 </head>
 <body>
 
-<model-viewer id="modelo3D"
-    src="CAMISETA.glb"
-    alt="Modelo dinámico"
-    auto-rotate camera-controls ar
-    camera-orbit="0deg 75deg 200%"
-    shadow-intensity="1">
+<div class="panel">
+  <label>Diseño (textura)</label>
+  <input type="file" id="diseñoInput" accept="image/*" />
+
+  <label>Mapa Normal</label>
+  <input type="file" id="normalInput" accept="image/*" />
+
+  <label>Mapa Specular</label>
+  <input type="file" id="specularInput" accept="image/*" />
+
+  <label>Color Base</label>
+  <input type="color" id="colorInput" value="#ffffff" />
+
+  <label>Opacidad</label>
+  <input type="range" id="opacidadSlider" min="0" max="1" step="0.01" value="1" />
+
+  <label>Brillo (Roughness)</label>
+  <input type="range" id="brilloSlider" min="0" max="1" step="0.01" value="0.5" />
+
+  <label>Luz (exposure)</label>
+  <input type="range" id="luzSlider" min="0" max="5" step="0.1" value="1.5" />
+
+  <button class="exportar" id="btnExportar">📸 Exportar imagen</button>
+</div>
+
+<model-viewer
+  id="viewer"
+  src="CAMISETA.glb"
+  camera-controls
+  auto-rotate
+  ar
+  exposure="1.5"
+  shadow-intensity="1"
+  camera-orbit="0deg 75deg 200%">
 </model-viewer>
 
-<input type="file" accept="image/jpeg" class="btn-cambiar-textura" id="inputTextura">
-
 <script>
-const modelo = document.getElementById('modelo3D');
-const inputTextura = document.getElementById('inputTextura');
+const viewer = document.getElementById('viewer');
 
-inputTextura.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            modelo.model.materials.forEach((material) => {
-                if(material.pbrMetallicRoughness.baseColorTexture){
-                    material.pbrMetallicRoughness.baseColorTexture.texture.source.setURI(e.target.result);
-                }
-            });
-        };
-        reader.readAsDataURL(file);
-    }
+// Función para cargar una textura en los materiales
+function aplicarTextura(inputId, tipo) {
+  const input = document.getElementById(inputId);
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const textureURL = reader.result;
+      viewer.model.materials.forEach(mat => {
+        const matPBR = mat.pbrMetallicRoughness;
+
+        if (tipo === "base") {
+          if (matPBR.baseColorTexture) {
+            matPBR.baseColorTexture.texture.source.setURI(textureURL);
+          }
+        } else if (tipo === "normal") {
+          if (mat.normalTexture) {
+            mat.normalTexture.texture.source.setURI(textureURL);
+          } else {
+            mat.normalTexture = {
+              texture: { source: { setURI: () => {} } }
+            };
+          }
+        } else if (tipo === "specular") {
+          if (matPBR.metallicRoughnessTexture) {
+            matPBR.metallicRoughnessTexture.texture.source.setURI(textureURL);
+          }
+        }
+      });
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+aplicarTextura("diseñoInput", "base");
+aplicarTextura("normalInput", "normal");
+aplicarTextura("specularInput", "specular");
+
+// Color base
+document.getElementById('colorInput').addEventListener('input', (e) => {
+  const hex = e.target.value;
+  const r = parseInt(hex.substr(1,2),16)/255;
+  const g = parseInt(hex.substr(3,2),16)/255;
+  const b = parseInt(hex.substr(5,2),16)/255;
+
+  viewer.model.materials.forEach(mat => {
+    mat.pbrMetallicRoughness.baseColorFactor = [r, g, b, mat.pbrMetallicRoughness.baseColorFactor[3]];
+  });
+});
+
+// Opacidad
+document.getElementById('opacidadSlider').addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  viewer.model.materials.forEach(mat => {
+    let factor = mat.pbrMetallicRoughness.baseColorFactor;
+    mat.pbrMetallicRoughness.baseColorFactor = [factor[0], factor[1], factor[2], value];
+  });
+});
+
+// Brillo
+document.getElementById('brilloSlider').addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  viewer.model.materials.forEach(mat => {
+    mat.pbrMetallicRoughness.roughnessFactor = value;
+  });
+});
+
+// Luz
+document.getElementById('luzSlider').addEventListener('input', (e) => {
+  viewer.exposure = parseFloat(e.target.value);
+});
+
+// Exportar imagen renderizada
+document.getElementById('btnExportar').addEventListener('click', async () => {
+  const blob = await viewer.toBlob({ idealAspect: true });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'modelo_3d.png';
+  a.click();
 });
 </script>
 
