@@ -3,82 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelo 3D Ajustado</title>
+    <title>Modelo 3D con texturas dinámicas</title>
     <script type="module"
         src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js">
     </script>
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            background: #f0f0f0; 
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
         }
         model-viewer {
             width: 100%;
             height: 100vh;
-            --poster-color: transparent;
         }
-        .instrucciones {
-            position: absolute; 
-            z-index: 10; 
-            color: #333; 
-            padding: 10px; 
-            font-size: 14px;
-        }
-        .descargar-btn {
+        .btn-cambiar-textura {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background-color: rgba(0,0,0,0.6);
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-size: 14px;
+            top: 20px;
+            right: 20px;
+            padding: 8px 12px;
+            font-family: Arial;
         }
     </style>
 </head>
 <body>
-    <div class="instrucciones">
-        ⬅️ Usa el ratón o los dedos para girar, acercar y alejar el modelo.<br>
-        🔄 Doble clic para reiniciar la vista original.
-    </div>
 
-    <model-viewer 
-        id="modelo3D"
-        src="CAMISETA.glb" 
-        alt="Modelo CLO3D" 
-        camera-controls 
-        auto-rotate 
-        ar
-        shadow-intensity="1"
-        exposure="1"
-        field-of-view="45deg"
-        camera-orbit="0deg 75deg 200%"
-        min-camera-orbit="auto auto 50%"
-        max-camera-orbit="auto auto 200%">
+<model-viewer id="modelo3D"
+    src="CAMISETA.glb"
+    alt="Modelo dinámico"
+    auto-rotate camera-controls ar
+    camera-orbit="0deg 75deg 200%"
+    shadow-intensity="1">
+</model-viewer>
 
-        <light intensity="1" color="#ffffff" position="-1 2 4" type="directional"></light>
-        <light intensity="0.6" color="#ffffff" position="1 -2 -4" type="directional"></light>
-        <ambient-light intensity="0.6"></ambient-light>
+<input type="file" accept="image/jpeg" class="btn-cambiar-textura" id="inputTextura">
 
-    </model-viewer>
+<script>
+const modelo = document.getElementById('modelo3D');
+const inputTextura = document.getElementById('inputTextura');
 
-    <a href="CAMISETA.glb" download class="descargar-btn">
-        ⬇️ Descargar modelo
-    </a>
+inputTextura.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            modelo.model.materials.forEach((material) => {
+                if(material.pbrMetallicRoughness.baseColorTexture){
+                    material.pbrMetallicRoughness.baseColorTexture.texture.source.setURI(e.target.result);
+                }
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+});
+</script>
 
-    <script>
-        const modelo = document.getElementById('modelo3D');
-        const camaraOriginal = modelo.getAttribute('camera-orbit');
-        
-        modelo.addEventListener('dblclick', () => {
-            modelo.cameraOrbit = camaraOriginal;
-            modelo.resetTurntableRotation();
-        });
-    </script>
 </body>
 </html>
