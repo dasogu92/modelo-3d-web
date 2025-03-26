@@ -58,6 +58,11 @@
     .exportar:hover {
       background: #555;
     }
+
+    .valor {
+      font-size: 12px;
+      float: right;
+    }
   </style>
 </head>
 <body>
@@ -69,14 +74,14 @@
   <label>Color Base</label>
   <input type="color" id="colorInput" value="#ffffff" />
 
-  <label>Opacidad</label>
+  <label for="opacidadSlider">Opacidad</label>
   <input type="range" id="opacidadSlider" min="0" max="1" step="0.01" value="1" />
 
-  <label>Brillo (Roughness)</label>
+  <label for="brilloSlider">Brillo (Roughness)</label>
   <input type="range" id="brilloSlider" min="0" max="1" step="0.01" value="0.5" />
 
-  <label>Luz (exposure)</label>
-  <input type="range" id="luzSlider" min="0" max="5" step="0.1" value="1.5" />
+  <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
+  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
 
   <button class="exportar" id="btnExportar">📸 Exportar imagen</button>
 </div>
@@ -87,7 +92,7 @@
   camera-controls
   auto-rotate
   ar
-  exposure="1.5"
+  exposure="0.75"
   shadow-intensity="1"
   camera-orbit="0deg 75deg 200%">
 </model-viewer>
@@ -95,16 +100,14 @@
 <script>
 const viewer = document.getElementById('viewer');
 
-// Guardar cámara inicial
+// Reinicio de cámara al hacer doble clic
 const camaraInicial = viewer.getAttribute('camera-orbit');
-
-// Reiniciar cámara al hacer doble clic
 viewer.addEventListener('dblclick', () => {
   viewer.cameraOrbit = camaraInicial;
   viewer.resetTurntableRotation();
 });
 
-// Cambiar textura
+// Cambiar textura base
 document.getElementById('diseñoInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -121,7 +124,7 @@ document.getElementById('diseñoInput').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// Color base
+// Cambiar color base
 document.getElementById('colorInput').addEventListener('input', (e) => {
   const hex = e.target.value;
   const r = parseInt(hex.substr(1,2),16)/255;
@@ -143,7 +146,7 @@ document.getElementById('opacidadSlider').addEventListener('input', (e) => {
   });
 });
 
-// Brillo
+// Brillo (Roughness)
 document.getElementById('brilloSlider').addEventListener('input', (e) => {
   const value = parseFloat(e.target.value);
   viewer.model.materials.forEach(mat => {
@@ -151,9 +154,17 @@ document.getElementById('brilloSlider').addEventListener('input', (e) => {
   });
 });
 
-// Luz
-document.getElementById('luzSlider').addEventListener('input', (e) => {
-  viewer.exposure = parseFloat(e.target.value);
+// Luz (exposure) + mostrar valor
+const luzSlider = document.getElementById('luzSlider');
+const luzValue = document.getElementById('luzValue');
+
+viewer.exposure = parseFloat(luzSlider.value);
+luzValue.textContent = viewer.exposure;
+
+luzSlider.addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  viewer.exposure = value;
+  luzValue.textContent = value.toFixed(2);
 });
 
 // Exportar imagen
