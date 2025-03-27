@@ -44,7 +44,8 @@
     }
 
     .exportar,
-    #btnAplicar {
+    #btnAplicar,
+    #btnMinimizar {
       margin-top: 10px;
       padding: 8px;
       width: 100%;
@@ -56,8 +57,24 @@
     }
 
     .exportar:hover,
-    #btnAplicar:hover {
+    #btnAplicar:hover,
+    #btnMinimizar:hover {
       background: #555;
+    }
+
+    #togglePanel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 20;
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: none;
     }
 
     .valor {
@@ -68,7 +85,7 @@
 </head>
 <body>
 
-<div class="panel">
+<div class="panel" id="controlPanel">
   <label>Cargar textura de diseño</label>
   <input type="file" id="inputTextura" accept="image/*" />
 
@@ -78,7 +95,10 @@
   <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
 
   <button class="exportar" id="btnExportar">📸 Exportar imagen</button>
+  <button id="btnMinimizar">🔽 Ocultar panel</button>
 </div>
+
+<button id="togglePanel">🔼 Mostrar panel</button>
 
 <model-viewer
   id="viewer"
@@ -115,7 +135,7 @@ document.getElementById('inputTextura').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura a TODOS los materiales del modelo
+// Aplicar textura
 document.getElementById('btnAplicar').addEventListener('click', async () => {
   if (!texturaCargada) {
     alert("⚠️ Por favor, sube primero una imagen.");
@@ -134,7 +154,7 @@ document.getElementById('btnAplicar').addEventListener('click', async () => {
   for (const mat of materiales) {
     try {
       mat.pbrMetallicRoughness.setBaseColorTexture(textura);
-      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]); // Asegura visibilidad
+      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
       aplicado = true;
     } catch (err) {
       console.error("Error aplicando la textura:", err);
@@ -170,6 +190,21 @@ document.getElementById('btnExportar').addEventListener('click', async () => {
   a.href = url;
   a.download = 'modelo_3d.png';
   a.click();
+});
+
+// Minimizar / Maximizar panel
+const controlPanel = document.getElementById('controlPanel');
+const toggleBtn = document.getElementById('togglePanel');
+const minimizarBtn = document.getElementById('btnMinimizar');
+
+minimizarBtn.addEventListener('click', () => {
+  controlPanel.style.display = 'none';
+  toggleBtn.style.display = 'block';
+});
+
+toggleBtn.addEventListener('click', () => {
+  controlPanel.style.display = 'block';
+  toggleBtn.style.display = 'none';
 });
 </script>
 
