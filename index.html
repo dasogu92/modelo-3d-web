@@ -38,7 +38,6 @@
     }
 
     .panel input[type="range"],
-    .panel input[type="color"],
     .panel input[type="file"] {
       width: 100%;
       margin-bottom: 10px;
@@ -58,27 +57,13 @@
     .exportar:hover {
       background: #555;
     }
-
-    .valor {
-      font-size: 12px;
-      float: right;
-    }
   </style>
 </head>
 <body>
 
 <div class="panel">
-  <label>Diseño (textura)</label>
-  <input type="file" id="diseñoInput" accept="image/*" />
-
-  <label>Color Base</label>
-  <input type="color" id="colorInput" value="#ffffff" />
-
-  <label for="opacidadSlider">Opacidad</label>
-  <input type="range" id="opacidadSlider" min="0" max="1" step="0.01" value="1" />
-
-  <label for="brilloSlider">Brillo (Roughness)</label>
-  <input type="range" id="brilloSlider" min="0" max="1" step="0.01" value="0.5" />
+  <label>Cargar textura de diseño</label>
+  <input type="file" id="inputTextura" accept="image/*" />
 
   <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
   <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
@@ -107,51 +92,23 @@ viewer.addEventListener('dblclick', () => {
   viewer.resetTurntableRotation();
 });
 
-// Cambiar textura base
-document.getElementById('diseñoInput').addEventListener('change', (e) => {
+// Cargar textura
+document.getElementById('inputTextura').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = () => {
     const textureUrl = reader.result;
+
     viewer.model.materials.forEach(mat => {
-      if (mat.pbrMetallicRoughness.baseColorTexture) {
-        mat.pbrMetallicRoughness.baseColorTexture.texture.source.setURI(textureUrl);
+      const baseTex = mat.pbrMetallicRoughness.baseColorTexture;
+      if (baseTex && baseTex.texture && baseTex.texture.source) {
+        baseTex.texture.source.setURI(textureUrl);
       }
     });
   };
   reader.readAsDataURL(file);
-});
-
-// Cambiar color base
-document.getElementById('colorInput').addEventListener('input', (e) => {
-  const hex = e.target.value;
-  const r = parseInt(hex.substr(1,2),16)/255;
-  const g = parseInt(hex.substr(3,2),16)/255;
-  const b = parseInt(hex.substr(5,2),16)/255;
-
-  viewer.model.materials.forEach(mat => {
-    const old = mat.pbrMetallicRoughness.baseColorFactor;
-    mat.pbrMetallicRoughness.baseColorFactor = [r, g, b, old[3]];
-  });
-});
-
-// Opacidad
-document.getElementById('opacidadSlider').addEventListener('input', (e) => {
-  const value = parseFloat(e.target.value);
-  viewer.model.materials.forEach(mat => {
-    const old = mat.pbrMetallicRoughness.baseColorFactor;
-    mat.pbrMetallicRoughness.baseColorFactor = [old[0], old[1], old[2], value];
-  });
-});
-
-// Brillo (Roughness)
-document.getElementById('brilloSlider').addEventListener('input', (e) => {
-  const value = parseFloat(e.target.value);
-  viewer.model.materials.forEach(mat => {
-    mat.pbrMetallicRoughness.roughnessFactor = value;
-  });
 });
 
 // Luz (exposure) + mostrar valor
