@@ -95,14 +95,14 @@
 const viewer = document.getElementById('viewer');
 let texturaCargada = null;
 
-// Reiniciar cámara con doble clic
+// Reiniciar cámara al hacer doble clic
 const camaraInicial = viewer.getAttribute('camera-orbit');
 viewer.addEventListener('dblclick', () => {
   viewer.cameraOrbit = camaraInicial;
   viewer.resetTurntableRotation();
 });
 
-// Cargar imagen al input
+// Cargar imagen
 document.getElementById('inputTextura').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -115,7 +115,7 @@ document.getElementById('inputTextura').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura a todos los materiales (con o sin baseColorTexture)
+// Aplicar textura a TODOS los materiales del modelo
 document.getElementById('btnAplicar').addEventListener('click', async () => {
   if (!texturaCargada) {
     alert("⚠️ Por favor, sube primero una imagen.");
@@ -123,27 +123,28 @@ document.getElementById('btnAplicar').addEventListener('click', async () => {
   }
 
   const materiales = viewer.model?.materials || [];
+  if (materiales.length === 0) {
+    alert("❌ No se encontraron materiales en el modelo.");
+    return;
+  }
+
+  const textura = await viewer.createTexture(texturaCargada);
   let aplicado = false;
 
   for (const mat of materiales) {
-    if (mat.pbrMetallicRoughness.baseColorTexture?.texture?.source) {
-      mat.pbrMetallicRoughness.baseColorTexture.texture.source.setURI(texturaCargada);
+    try {
+      mat.pbrMetallicRoughness.setBaseColorTexture(textura);
+      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]); // Asegura visibilidad
       aplicado = true;
-    } else {
-      try {
-        const nuevaTextura = await viewer.createTexture(texturaCargada);
-        mat.pbrMetallicRoughness.setBaseColorTexture(nuevaTextura);
-        aplicado = true;
-      } catch (err) {
-        console.error("❌ Error al crear textura:", err);
-      }
+    } catch (err) {
+      console.error("Error aplicando la textura:", err);
     }
   }
 
   if (aplicado) {
     alert("✅ Textura aplicada a todos los materiales.");
   } else {
-    alert("❌ No se pudo aplicar la textura al modelo.");
+    alert("❌ No se pudo aplicar la textura.");
   }
 });
 
