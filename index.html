@@ -3,174 +3,138 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Visor 3D Camiseta</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <title>Visor 3D – Cargar Modelo y Textura</title>
   <style>
-    body {
-      margin: 0;
-      background-color: #f0f0f0;
-      font-family: Arial, sans-serif;
-    }
-
-    model-viewer {
-      width: 100vw;
-      height: 100vh;
-      --poster-color: transparent;
-    }
-
+    body { margin: 0; background: #e0e0e0; font-family: sans-serif; }
+    canvas { display: block; }
     .panel {
       position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
-      padding: 16px;
+      top: 10px; left: 10px;
+      background: rgba(255,255,255,0.95);
+      padding: 12px;
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      max-width: 300px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      z-index: 10;
     }
-
-    .panel label {
-      font-weight: bold;
-      font-size: 13px;
-      margin-top: 10px;
+    .panel input {
       display: block;
-    }
-
-    .panel input[type="range"],
-    .panel input[type="file"] {
-      width: 100%;
       margin-bottom: 10px;
-    }
-
-    .exportar,
-    #btnAplicar {
-      margin-top: 10px;
-      padding: 8px;
       width: 100%;
-      background: #333;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .exportar:hover,
-    #btnAplicar:hover {
-      background: #555;
-    }
-
-    .valor {
-      font-size: 12px;
-      float: right;
     }
   </style>
 </head>
 <body>
 
 <div class="panel">
-  <label>Cargar textura de diseño</label>
-  <input type="file" id="inputTextura" accept="image/*" />
+  <label><strong>Subir modelo (.glb):</strong></label>
+  <input type="file" id="modelInput" accept=".glb" />
 
-  <button id="btnAplicar">🎨 Aplicar al modelo</button>
-
-  <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
-  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
-
-  <button class="exportar" id="btnExportar">📸 Exportar imagen</button>
+  <label><strong>Cargar textura (.jpg / .png):</strong></label>
+  <input type="file" id="textureInput" accept="image/*" />
 </div>
 
-<model-viewer
-  id="viewer"
-  src="CAMISETA.glb"
-  camera-controls
-  auto-rotate
-  ar
-  exposure="0.75"
-  shadow-intensity="1"
-  camera-orbit="0deg 75deg 200%">
-</model-viewer>
+<canvas id="canvas"></canvas>
+
+<!-- Three.js + loaders desde CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
-const viewer = document.getElementById('viewer');
-let texturaCargada = null;
+let scene, camera, renderer, controls;
+let model = null;
+let currentTexture = null;
 
-// Reiniciar cámara al hacer doble clic
-const camaraInicial = viewer.getAttribute('camera-orbit');
-viewer.addEventListener('dblclick', () => {
-  viewer.cameraOrbit = camaraInicial;
-  viewer.resetTurntableRotation();
-});
+init();
 
-// Cargar imagen
-document.getElementById('inputTextura').addEventListener('change', (e) => {
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xe0e0e0);
+
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 1.6, 3);
+
+  renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("canvas"), antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+  scene.add(hemiLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  dirLight.position.set(3, 10, 10);
+  scene.add(dirLight);
+
+  animate();
+}
+
+// Cargar modelo
+document.getElementById('modelInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = () => {
-    texturaCargada = reader.result;
-    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo' para usarla.");
+  reader.onload = function (event) {
+    const contents = event.target.result;
+
+    const loader = new THREE.GLTFLoader();
+    loader.parse(contents, '', function (gltf) {
+      if (model) scene.remove(model);
+      model = gltf.scene;
+      model.scale.set(1,1,1);
+      scene.add(model);
+      centerModel(model);
+      applyTexture(); // aplicar textura si ya hay una cargada
+    });
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Cargar textura
+document.getElementById('textureInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    const textureLoader = new THREE.TextureLoader();
+    textureLoader.load(event.target.result, (texture) => {
+      currentTexture = texture;
+      applyTexture();
+    });
   };
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura a TODOS los materiales del modelo
-document.getElementById('btnAplicar').addEventListener('click', async () => {
-  if (!texturaCargada) {
-    alert("⚠️ Por favor, sube primero una imagen.");
-    return;
-  }
+function applyTexture() {
+  if (!model || !currentTexture) return;
 
-  const materiales = viewer.model?.materials || [];
-  if (materiales.length === 0) {
-    alert("❌ No se encontraron materiales en el modelo.");
-    return;
-  }
-
-  const textura = await viewer.createTexture(texturaCargada);
-  let aplicado = false;
-
-  for (const mat of materiales) {
-    try {
-      mat.pbrMetallicRoughness.setBaseColorTexture(textura);
-      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]); // Asegura visibilidad
-      aplicado = true;
-    } catch (err) {
-      console.error("Error aplicando la textura:", err);
+  model.traverse(child => {
+    if (child.isMesh && child.material) {
+      child.material.map = currentTexture;
+      child.material.needsUpdate = true;
     }
-  }
+  });
+}
 
-  if (aplicado) {
-    alert("✅ Textura aplicada a todos los materiales.");
-  } else {
-    alert("❌ No se pudo aplicar la textura.");
-  }
-});
+function centerModel(model) {
+  const box = new THREE.Box3().setFromObject(model);
+  const center = box.getCenter(new THREE.Vector3());
+  model.position.sub(center); // centrar en el origen
+}
 
-// Luz (exposure)
-const luzSlider = document.getElementById('luzSlider');
-const luzValue = document.getElementById('luzValue');
-
-viewer.exposure = parseFloat(luzSlider.value);
-luzValue.textContent = viewer.exposure;
-
-luzSlider.addEventListener('input', (e) => {
-  const value = parseFloat(e.target.value);
-  viewer.exposure = value;
-  luzValue.textContent = value.toFixed(2);
-});
-
-// Exportar imagen
-document.getElementById('btnExportar').addEventListener('click', async () => {
-  const blob = await viewer.toBlob({ idealAspect: true });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'modelo_3d.png';
-  a.click();
-});
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
 </script>
 
 </body>
