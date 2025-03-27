@@ -43,7 +43,8 @@
       margin-bottom: 10px;
     }
 
-    .exportar {
+    .exportar,
+    #btnAplicar {
       margin-top: 10px;
       padding: 8px;
       width: 100%;
@@ -54,8 +55,14 @@
       cursor: pointer;
     }
 
-    .exportar:hover {
+    .exportar:hover,
+    #btnAplicar:hover {
       background: #555;
+    }
+
+    .valor {
+      font-size: 12px;
+      float: right;
     }
   </style>
 </head>
@@ -64,6 +71,8 @@
 <div class="panel">
   <label>Cargar textura de diseño</label>
   <input type="file" id="inputTextura" accept="image/*" />
+
+  <button id="btnAplicar">🎨 Aplicar al modelo</button>
 
   <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
   <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
@@ -84,6 +93,7 @@
 
 <script>
 const viewer = document.getElementById('viewer');
+let texturaCargada = null;
 
 // Reinicio de cámara al hacer doble clic
 const camaraInicial = viewer.getAttribute('camera-orbit');
@@ -92,26 +102,45 @@ viewer.addEventListener('dblclick', () => {
   viewer.resetTurntableRotation();
 });
 
-// Cargar textura
+// Cargar imagen de textura
 document.getElementById('inputTextura').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
   reader.onload = () => {
-    const textureUrl = reader.result;
-
-    viewer.model.materials.forEach(mat => {
-      const baseTex = mat.pbrMetallicRoughness.baseColorTexture;
-      if (baseTex && baseTex.texture && baseTex.texture.source) {
-        baseTex.texture.source.setURI(textureUrl);
-      }
-    });
+    texturaCargada = reader.result;
+    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo' para usarla.");
   };
   reader.readAsDataURL(file);
 });
 
-// Luz (exposure) + mostrar valor
+// Aplicar al modelo
+document.getElementById('btnAplicar').addEventListener('click', () => {
+  if (!texturaCargada) {
+    alert("⚠️ Por favor, sube primero una imagen.");
+    return;
+  }
+
+  const materiales = viewer.model?.materials || [];
+  let aplicado = false;
+
+  materiales.forEach(mat => {
+    const baseTex = mat.pbrMetallicRoughness.baseColorTexture;
+    if (baseTex && baseTex.texture && baseTex.texture.source) {
+      baseTex.texture.source.setURI(texturaCargada);
+      aplicado = true;
+    }
+  });
+
+  if (aplicado) {
+    alert("✅ Diseño aplicado al modelo.");
+  } else {
+    alert("❌ Este modelo no tiene una textura base que se pueda reemplazar.");
+  }
+});
+
+// Control de luz (exposure)
 const luzSlider = document.getElementById('luzSlider');
 const luzValue = document.getElementById('luzValue');
 
