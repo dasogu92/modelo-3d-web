@@ -95,14 +95,14 @@
 const viewer = document.getElementById('viewer');
 let texturaCargada = null;
 
-// Reinicio de cámara al hacer doble clic
+// Reiniciar cámara con doble clic
 const camaraInicial = viewer.getAttribute('camera-orbit');
 viewer.addEventListener('dblclick', () => {
   viewer.cameraOrbit = camaraInicial;
   viewer.resetTurntableRotation();
 });
 
-// Cargar imagen de textura
+// Cargar imagen al input
 document.getElementById('inputTextura').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -115,8 +115,8 @@ document.getElementById('inputTextura').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// Aplicar al modelo
-document.getElementById('btnAplicar').addEventListener('click', () => {
+// Aplicar textura a todos los materiales (con o sin baseColorTexture)
+document.getElementById('btnAplicar').addEventListener('click', async () => {
   if (!texturaCargada) {
     alert("⚠️ Por favor, sube primero una imagen.");
     return;
@@ -125,22 +125,29 @@ document.getElementById('btnAplicar').addEventListener('click', () => {
   const materiales = viewer.model?.materials || [];
   let aplicado = false;
 
-  materiales.forEach(mat => {
-    const baseTex = mat.pbrMetallicRoughness.baseColorTexture;
-    if (baseTex && baseTex.texture && baseTex.texture.source) {
-      baseTex.texture.source.setURI(texturaCargada);
+  for (const mat of materiales) {
+    if (mat.pbrMetallicRoughness.baseColorTexture?.texture?.source) {
+      mat.pbrMetallicRoughness.baseColorTexture.texture.source.setURI(texturaCargada);
       aplicado = true;
+    } else {
+      try {
+        const nuevaTextura = await viewer.createTexture(texturaCargada);
+        mat.pbrMetallicRoughness.setBaseColorTexture(nuevaTextura);
+        aplicado = true;
+      } catch (err) {
+        console.error("❌ Error al crear textura:", err);
+      }
     }
-  });
+  }
 
   if (aplicado) {
-    alert("✅ Diseño aplicado al modelo.");
+    alert("✅ Textura aplicada a todos los materiales.");
   } else {
-    alert("❌ Este modelo no tiene una textura base que se pueda reemplazar.");
+    alert("❌ No se pudo aplicar la textura al modelo.");
   }
 });
 
-// Control de luz (exposure)
+// Luz (exposure)
 const luzSlider = document.getElementById('luzSlider');
 const luzValue = document.getElementById('luzValue');
 
