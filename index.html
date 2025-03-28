@@ -1,18 +1,24 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visor 3D con Three.js</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visor 3D Camiseta</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     body {
       margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
       background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
     }
 
-    #panel {
+    model-viewer {
+      width: 100vw;
+      height: 100vh;
+      --poster-color: transparent;
+    }
+
+    .panel {
       position: absolute;
       top: 10px;
       left: 10px;
@@ -20,35 +26,35 @@
       background: rgba(255, 255, 255, 0.95);
       padding: 16px;
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
       max-width: 300px;
     }
 
-    #panel label {
+    .panel label {
       font-weight: bold;
       font-size: 13px;
-      display: block;
       margin-top: 10px;
+      display: block;
     }
 
-    #panel input[type="range"],
-    #panel input[type="file"] {
+    .panel input[type="range"],
+    .panel input[type="file"] {
       width: 100%;
       margin-bottom: 10px;
     }
 
-    #panel button {
+    .panel button {
       margin-top: 10px;
       padding: 8px;
       width: 100%;
       background: #333;
-      color: white;
+      color: #fff;
       border: none;
       border-radius: 6px;
       cursor: pointer;
     }
 
-    #panel button:hover {
+    .panel button:hover {
       background: #555;
     }
 
@@ -57,132 +63,161 @@
       top: 10px;
       left: 10px;
       z-index: 20;
-      display: none;
       background: #333;
-      color: white;
+      color: #fff;
       border: none;
       padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
+      font-size: 14px;
+      display: none;
+    }
+
+    .valor {
+      font-size: 12px;
+      float: right;
     }
   </style>
 </head>
 <body>
-  <div id="panel">
-    <label>Cargar textura (.jpg/.png)</label>
-    <input type="file" id="textureInput" accept="image/*" />
 
-    <button id="applyTexture">🎨 Aplicar al modelo</button>
+<div class="panel" id="controlPanel">
+  <label>Cargar textura de diseño (.jpg/.png)</label>
+  <input type="file" id="inputTextura" accept="image/*" />
 
-    <label for="lightSlider">Luz (intensidad): <span id="lightValue">1.0</span></label>
-    <input type="range" id="lightSlider" min="0" max="5" step="0.1" value="1" />
+  <button id="btnAplicar">🎨 Aplicar al modelo</button>
 
-    <button id="hidePanel">🔽 Ocultar panel</button>
-  </div>
-  <button id="togglePanel">🔼 Mostrar panel</button>
+  <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
+  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
 
-  <canvas id="canvas"></canvas>
+  <button id="btnExportar">📸 Exportar imagen</button>
+  <button id="btnMinimizar">🔽 Ocultar panel</button>
+</div>
 
-  <!-- Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
+<button id="togglePanel">🔼 Mostrar panel</button>
 
-  <script>
-    let scene, camera, renderer, controls, model, light;
+<model-viewer
+  id="viewer"
+  src="CAMISETA.glb"
+  camera-controls
+  auto-rotate
+  exposure="0.75"
+  shadow-intensity="1"
+  camera-orbit="0deg 75deg 200%">
+</model-viewer>
 
-    init();
+<script>
+const viewer = document.getElementById('viewer');
+let texturaCargada = null;
 
-    function init() {
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 1.5, 3);
+// Reiniciar cámara al hacer doble clic
+const camaraInicial = viewer.getAttribute('camera-orbit');
+viewer.addEventListener('dblclick', () => {
+  viewer.cameraOrbit = camaraInicial;
+  viewer.resetTurntableRotation();
+});
 
-      renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(window.devicePixelRatio);
+// Cargar textura
+document.getElementById('inputTextura').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
+  const reader = new FileReader();
+  reader.onload = () => {
+    texturaCargada = reader.result;
+    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo'.");
+  };
+  reader.readAsDataURL(file);
+});
 
-      const ambient = new THREE.AmbientLight(0xffffff, 0.3);
-      scene.add(ambient);
+// Aplicar textura forzada por UV
+document.getElementById('btnAplicar').addEventListener('click', async () => {
+  if (!texturaCargada) {
+    alert("⚠️ Primero selecciona una imagen.");
+    return;
+  }
 
-      light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(5, 10, 5);
-      scene.add(light);
+  try {
+    await viewer.updateComplete;
+    await viewer.model?.updateComplete;
 
-      const loader = new THREE.GLTFLoader();
-      loader.load('CAMISETA.glb', function(gltf) {
-        model = gltf.scene;
-        model.scale.set(1, 1, 1);
-        scene.add(model);
-      }, undefined, function(error) {
-        console.error('Error cargando el modelo:', error);
-      });
+    const textura = await viewer.createTexture(texturaCargada);
+    const materiales = viewer.model?.materials;
 
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-
-      animate();
+    if (!materiales || materiales.length === 0) {
+      alert("❌ El modelo no tiene materiales editables.");
+      return;
     }
 
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
+    let aplicado = false;
 
-    // Luz slider
-    const lightSlider = document.getElementById('lightSlider');
-    const lightValue = document.getElementById('lightValue');
-    lightSlider.addEventListener('input', () => {
-      const value = parseFloat(lightSlider.value);
-      light.intensity = value;
-      lightValue.textContent = value.toFixed(1);
-    });
-
-    // Textura
-    let loadedTexture = null;
-    document.getElementById('textureInput').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const textureLoader = new THREE.TextureLoader();
-        loadedTexture = textureLoader.load(e.target.result);
-        alert("✅ Textura cargada. Pulsa 'Aplicar al modelo'");
-      };
-      reader.readAsDataURL(file);
-    });
-
-    document.getElementById('applyTexture').addEventListener('click', () => {
-      if (!model || !loadedTexture) {
-        alert("⚠️ Carga primero un modelo y una textura.");
-        return;
+    for (const mat of materiales) {
+      if (mat?.pbrMetallicRoughness) {
+        mat.pbrMetallicRoughness.setBaseColorTexture(textura);
+        mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+        aplicado = true;
       }
-      model.traverse((child) => {
-        if (child.isMesh) {
-          child.material.map = loadedTexture;
-          child.material.needsUpdate = true;
-        }
-      });
+    }
+
+    // Recorre nodos (fallback adicional)
+    viewer.model?.traverse((node) => {
+      if (node?.material?.pbrMetallicRoughness) {
+        node.material.pbrMetallicRoughness.setBaseColorTexture(textura);
+        node.material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+        aplicado = true;
+      }
     });
 
-    // Mostrar/Ocultar panel
-    const panel = document.getElementById('panel');
-    const toggle = document.getElementById('togglePanel');
-    document.getElementById('hidePanel').addEventListener('click', () => {
-      panel.style.display = 'none';
-      toggle.style.display = 'block';
-    });
-    toggle.addEventListener('click', () => {
-      panel.style.display = 'block';
-      toggle.style.display = 'none';
-    });
-  </script>
+    if (aplicado) {
+      alert("✅ Textura aplicada correctamente.");
+    } else {
+      alert("❌ No se pudieron modificar los materiales.");
+    }
+  } catch (err) {
+    console.error("Error aplicando textura:", err);
+    alert("❌ Error al aplicar la textura.");
+  }
+});
+
+// Luz (exposure)
+const luzSlider = document.getElementById('luzSlider');
+const luzValue = document.getElementById('luzValue');
+
+viewer.exposure = parseFloat(luzSlider.value);
+luzValue.textContent = viewer.exposure;
+
+luzSlider.addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  viewer.exposure = value;
+  luzValue.textContent = value.toFixed(2);
+});
+
+// Exportar imagen
+document.getElementById('btnExportar').addEventListener('click', async () => {
+  const blob = await viewer.toBlob({ idealAspect: true });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'modelo_3d.png';
+  a.click();
+});
+
+// Minimizar/Maximizar panel
+const controlPanel = document.getElementById('controlPanel');
+const toggleBtn = document.getElementById('togglePanel');
+const minimizarBtn = document.getElementById('btnMinimizar');
+
+minimizarBtn.addEventListener('click', () => {
+  controlPanel.style.display = 'none';
+  toggleBtn.style.display = 'block';
+});
+
+toggleBtn.addEventListener('click', () => {
+  controlPanel.style.display = 'block';
+  toggleBtn.style.display = 'none';
+});
+</script>
+
 </body>
 </html>
