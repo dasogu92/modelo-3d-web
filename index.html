@@ -2,49 +2,125 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Visor 3D con Textura UV</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visor 3D Camiseta</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body { margin: 0; background: #f0f0f0; font-family: sans-serif; }
-    model-viewer { width: 100vw; height: 100vh; }
+    body {
+      margin: 0;
+      background-color: #f0f0f0;
+      font-family: Arial, sans-serif;
+    }
+
+    model-viewer {
+      width: 100vw;
+      height: 100vh;
+      --poster-color: transparent;
+    }
+
     .panel {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: white;
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 16px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+      max-width: 300px;
     }
-    input, button {
-      margin-top: 8px;
+
+    .panel label {
+      font-weight: bold;
+      font-size: 13px;
+      margin-top: 10px;
+      display: block;
+    }
+
+    .panel input[type="range"],
+    .panel input[type="file"] {
       width: 100%;
-      padding: 6px;
+      margin-bottom: 10px;
+    }
+
+    .exportar,
+    #btnAplicar,
+    #btnMinimizar {
+      margin-top: 10px;
+      padding: 8px;
+      width: 100%;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .exportar:hover,
+    #btnAplicar:hover,
+    #btnMinimizar:hover {
+      background: #555;
+    }
+
+    #togglePanel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 20;
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      display: none;
+    }
+
+    .valor {
+      font-size: 12px;
+      float: right;
     }
   </style>
 </head>
 <body>
 
-<div class="panel">
-  <label>Cargar textura (.jpg o .png)</label>
+<div class="panel" id="controlPanel">
+  <label>Cargar textura de diseño</label>
   <input type="file" id="inputTextura" accept="image/*" />
-  <button id="btnAplicar">Aplicar al modelo</button>
+
+  <button id="btnAplicar">🎨 Aplicar al modelo</button>
+
+  <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
+  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
+
+  <button class="exportar" id="btnExportar">📸 Exportar imagen</button>
+  <button id="btnMinimizar">🔽 Ocultar panel</button>
 </div>
+
+<button id="togglePanel">🔼 Mostrar panel</button>
 
 <model-viewer
   id="viewer"
   src="CAMISETA.glb"
   camera-controls
-  exposure="1"
   auto-rotate
+  ar
+  exposure="0.75"
   shadow-intensity="1"
-  ar>
+  camera-orbit="0deg 75deg 200%">
 </model-viewer>
 
 <script>
 const viewer = document.getElementById('viewer');
-let texturaData = null;
+let texturaCargada = null;
+
+// Reiniciar cámara al hacer doble clic
+const camaraInicial = viewer.getAttribute('camera-orbit');
+viewer.addEventListener('dblclick', () => {
+  viewer.cameraOrbit = camaraInicial;
+  viewer.resetTurntableRotation();
+});
 
 // Cargar imagen
 document.getElementById('inputTextura').addEventListener('change', (e) => {
@@ -53,38 +129,82 @@ document.getElementById('inputTextura').addEventListener('change', (e) => {
 
   const reader = new FileReader();
   reader.onload = () => {
-    texturaData = reader.result;
-    alert("✅ Textura cargada. Ahora pulsa 'Aplicar al modelo'.");
+    texturaCargada = reader.result;
+    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo' para usarla.");
   };
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura como baseColorTexture
+// Aplicar textura
 document.getElementById('btnAplicar').addEventListener('click', async () => {
-  if (!texturaData) {
-    alert("⚠️ Primero selecciona una imagen.");
+  if (!texturaCargada) {
+    alert("⚠️ Por favor, sube primero una imagen.");
     return;
   }
 
-  try {
-    const textura = await viewer.createTexture(texturaData);
-    const materiales = viewer.model?.materials || [];
-
-    if (materiales.length === 0) {
-      alert("❌ El modelo no tiene materiales.");
-      return;
-    }
-
-    materiales.forEach(mat => {
-      mat.pbrMetallicRoughness.setBaseColorTexture(textura);
-      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]); // visibilidad total
-    });
-
-    alert("✅ Textura aplicada usando UVs.");
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error al aplicar la textura.");
+  const materiales = viewer.model?.materials || [];
+  if (materiales.length === 0) {
+    alert("❌ No se encontraron materiales en el modelo.");
+    return;
   }
+
+  const textura = await viewer.createTexture(texturaCargada);
+  let aplicado = false;
+
+  for (const mat of materiales) {
+    try {
+      mat.pbrMetallicRoughness.setBaseColorTexture(textura);
+      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+      aplicado = true;
+    } catch (err) {
+      console.error("Error aplicando la textura:", err);
+    }
+  }
+
+  if (aplicado) {
+    alert("✅ Textura aplicada a todos los materiales.");
+  } else {
+    alert("❌ No se pudo aplicar la textura.");
+  }
+});
+
+// Luz (exposure)
+const luzSlider = document.getElementById('luzSlider');
+const luzValue = document.getElementById('luzValue');
+
+viewer.exposure = parseFloat(luzSlider.value);
+luzValue.textContent = viewer.exposure;
+
+luzSlider.addEventListener('input', (e) => {
+  const value = parseFloat(e.target.value);
+  viewer.exposure = value;
+  luzValue.textContent = value.toFixed(2);
+});
+
+// Exportar imagen
+document.getElementById('btnExportar').addEventListener('click', async () => {
+  const blob = await viewer.toBlob({ idealAspect: true });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'modelo_3d.png';
+  a.click();
+});
+
+// Minimizar / Maximizar panel
+const controlPanel = document.getElementById('controlPanel');
+const toggleBtn = document.getElementById('togglePanel');
+const minimizarBtn = document.getElementById('btnMinimizar');
+
+minimizarBtn.addEventListener('click', () => {
+  controlPanel.style.display = 'none';
+  toggleBtn.style.display = 'block';
+});
+
+toggleBtn.addEventListener('click', () => {
+  controlPanel.style.display = 'block';
+  toggleBtn.style.display = 'none';
 });
 </script>
 
