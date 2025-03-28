@@ -43,9 +43,7 @@
       margin-bottom: 10px;
     }
 
-    .exportar,
-    #btnAplicar,
-    #btnMinimizar {
+    .panel button {
       margin-top: 10px;
       padding: 8px;
       width: 100%;
@@ -56,9 +54,7 @@
       cursor: pointer;
     }
 
-    .exportar:hover,
-    #btnAplicar:hover,
-    #btnMinimizar:hover {
+    .panel button:hover {
       background: #555;
     }
 
@@ -86,7 +82,7 @@
 <body>
 
 <div class="panel" id="controlPanel">
-  <label>Cargar textura de diseño</label>
+  <label>Cargar textura de diseño (.jpg/.png)</label>
   <input type="file" id="inputTextura" accept="image/*" />
 
   <button id="btnAplicar">🎨 Aplicar al modelo</button>
@@ -94,7 +90,7 @@
   <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
   <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
 
-  <button class="exportar" id="btnExportar">📸 Exportar imagen</button>
+  <button id="btnExportar">📸 Exportar imagen</button>
   <button id="btnMinimizar">🔽 Ocultar panel</button>
 </div>
 
@@ -105,7 +101,6 @@
   src="CAMISETA.glb"
   camera-controls
   auto-rotate
-  ar
   exposure="0.75"
   shadow-intensity="1"
   camera-orbit="0deg 75deg 200%">
@@ -122,7 +117,7 @@ viewer.addEventListener('dblclick', () => {
   viewer.resetTurntableRotation();
 });
 
-// Cargar imagen
+// Cargar textura
 document.getElementById('inputTextura').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -130,41 +125,57 @@ document.getElementById('inputTextura').addEventListener('change', (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     texturaCargada = reader.result;
-    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo' para usarla.");
+    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo'.");
   };
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura
+// Aplicar textura forzada por UV
 document.getElementById('btnAplicar').addEventListener('click', async () => {
   if (!texturaCargada) {
-    alert("⚠️ Por favor, sube primero una imagen.");
+    alert("⚠️ Primero selecciona una imagen.");
     return;
   }
 
-  const materiales = viewer.model?.materials || [];
-  if (materiales.length === 0) {
-    alert("❌ No se encontraron materiales en el modelo.");
-    return;
-  }
+  try {
+    await viewer.updateComplete;
+    await viewer.model?.updateComplete;
 
-  const textura = await viewer.createTexture(texturaCargada);
-  let aplicado = false;
+    const textura = await viewer.createTexture(texturaCargada);
+    const materiales = viewer.model?.materials;
 
-  for (const mat of materiales) {
-    try {
-      mat.pbrMetallicRoughness.setBaseColorTexture(textura);
-      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
-      aplicado = true;
-    } catch (err) {
-      console.error("Error aplicando la textura:", err);
+    if (!materiales || materiales.length === 0) {
+      alert("❌ El modelo no tiene materiales editables.");
+      return;
     }
-  }
 
-  if (aplicado) {
-    alert("✅ Textura aplicada a todos los materiales.");
-  } else {
-    alert("❌ No se pudo aplicar la textura.");
+    let aplicado = false;
+
+    for (const mat of materiales) {
+      if (mat?.pbrMetallicRoughness) {
+        mat.pbrMetallicRoughness.setBaseColorTexture(textura);
+        mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+        aplicado = true;
+      }
+    }
+
+    // Recorre nodos (fallback adicional)
+    viewer.model?.traverse((node) => {
+      if (node?.material?.pbrMetallicRoughness) {
+        node.material.pbrMetallicRoughness.setBaseColorTexture(textura);
+        node.material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+        aplicado = true;
+      }
+    });
+
+    if (aplicado) {
+      alert("✅ Textura aplicada correctamente.");
+    } else {
+      alert("❌ No se pudieron modificar los materiales.");
+    }
+  } catch (err) {
+    console.error("Error aplicando textura:", err);
+    alert("❌ Error al aplicar la textura.");
   }
 });
 
@@ -192,7 +203,7 @@ document.getElementById('btnExportar').addEventListener('click', async () => {
   a.click();
 });
 
-// Minimizar / Maximizar panel
+// Minimizar/Maximizar panel
 const controlPanel = document.getElementById('controlPanel');
 const toggleBtn = document.getElementById('togglePanel');
 const minimizarBtn = document.getElementById('btnMinimizar');
