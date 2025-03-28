@@ -135,35 +135,36 @@ document.getElementById('inputTextura').addEventListener('change', (e) => {
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura
+// Aplicar textura forzadamente por UV
 document.getElementById('btnAplicar').addEventListener('click', async () => {
   if (!texturaCargada) {
     alert("⚠️ Por favor, sube primero una imagen.");
     return;
   }
 
-  const materiales = viewer.model?.materials || [];
-  if (materiales.length === 0) {
-    alert("❌ No se encontraron materiales en el modelo.");
-    return;
-  }
+  try {
+    const textura = await viewer.createTexture(texturaCargada);
+    const materiales = viewer.model?.materials || [];
 
-  const textura = await viewer.createTexture(texturaCargada);
-  let aplicado = false;
-
-  for (const mat of materiales) {
-    try {
-      mat.pbrMetallicRoughness.setBaseColorTexture(textura);
-      mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
-      aplicado = true;
-    } catch (err) {
-      console.error("Error aplicando la textura:", err);
+    // Aplicar a todos los materiales
+    for (const mat of materiales) {
+      if (mat?.pbrMetallicRoughness) {
+        mat.pbrMetallicRoughness.setBaseColorTexture(textura);
+        mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+      }
     }
-  }
 
-  if (aplicado) {
-    alert("✅ Textura aplicada a todos los materiales.");
-  } else {
+    // Forzar también a todos los nodos del modelo (por si hay geometrías no listadas en materials)
+    viewer.model?.traverse((node) => {
+      if (node?.material?.pbrMetallicRoughness) {
+        node.material.pbrMetallicRoughness.setBaseColorTexture(textura);
+        node.material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
+      }
+    });
+
+    alert("✅ Textura aplicada correctamente.");
+  } catch (err) {
+    console.error("Error al aplicar la textura:", err);
     alert("❌ No se pudo aplicar la textura.");
   }
 });
