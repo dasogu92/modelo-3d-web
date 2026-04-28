@@ -3,19 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Visor 3D Camiseta</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <title>Camiseta 3D interactiva</title>
+
   <style>
     body {
       margin: 0;
-      background-color: #f0f0f0;
+      overflow: hidden;
+      background: #111;
       font-family: Arial, sans-serif;
     }
 
-    model-viewer {
-      width: 100vw;
-      height: 100vh;
-      --poster-color: transparent;
+    canvas {
+      display: block;
     }
 
     .panel {
@@ -37,18 +36,17 @@
       display: block;
     }
 
-    .panel input[type="range"],
-    .panel input[type="file"] {
+    .panel input,
+    .panel button {
       width: 100%;
+      margin-top: 8px;
       margin-bottom: 10px;
     }
 
     .panel button {
-      margin-top: 10px;
       padding: 8px;
-      width: 100%;
       background: #333;
-      color: #fff;
+      color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
@@ -69,26 +67,39 @@
       padding: 6px 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 14px;
       display: none;
     }
 
-    .valor {
-      font-size: 12px;
-      float: right;
+    #info {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      color: white;
+      background: rgba(0,0,0,0.55);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      z-index: 5;
     }
   </style>
 </head>
+
 <body>
 
 <div class="panel" id="controlPanel">
   <label>Cargar textura de diseño (.jpg/.png)</label>
   <input type="file" id="inputTextura" accept="image/*" />
 
-  <button id="btnAplicar">🎨 Aplicar al modelo</button>
+  <button id="btnAplicar">🎨 Aplicar textura</button>
 
-  <label for="luzSlider">Luz (exposure): <span id="luzValue">0.75</span></label>
-  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="0.75" />
+  <label>Luz: <span id="luzValue">1.50</span></label>
+  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="1.5" />
+
+  <label>Fuerza tela: <span id="fuerzaValue">0.04</span></label>
+  <input type="range" id="fuerzaSlider" min="0.005" max="0.12" step="0.005" value="0.04" />
+
+  <label>Radio toque: <span id="radioValue">0.20</span></label>
+  <input type="range" id="radioSlider" min="0.05" max="0.60" step="0.01" value="0.20" />
 
   <button id="btnExportar">📸 Exportar imagen</button>
   <button id="btnMinimizar">🔽 Ocultar panel</button>
@@ -96,126 +107,265 @@
 
 <button id="togglePanel">🔼 Mostrar panel</button>
 
-<model-viewer
-  id="viewer"
-  src="CAMISETA.glb"
-  camera-controls
-  auto-rotate
-  exposure="0.75"
-  shadow-intensity="1"
-  camera-orbit="0deg 75deg 200%">
-</model-viewer>
+<div id="info">Mantén pulsado y arrastra sobre la camiseta</div>
 
-<script>
-const viewer = document.getElementById('viewer');
-let texturaCargada = null;
+<script type="module">
+import * as THREE from "https://unpkg.com/three@0.158.0/build/three.module.js";
+import { GLTFLoader } from "https://unpkg.com/three@0.158.0/examples/jsm/loaders/GLTFLoader.js";
+import { OrbitControls } from "https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js";
 
-// Reiniciar cámara al hacer doble clic
-const camaraInicial = viewer.getAttribute('camera-orbit');
-viewer.addEventListener('dblclick', () => {
-  viewer.cameraOrbit = camaraInicial;
-  viewer.resetTurntableRotation();
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+
+const camera = new THREE.PerspectiveCamera(
+  45,
+  window.innerWidth / window.innerHeight,
+  0.01,
+  1000
+);
+
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  preserveDrawingBuffer: true
 });
 
-// Cargar textura
-document.getElementById('inputTextura').addEventListener('change', (e) => {
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+scene.add(ambientLight);
+
+const light1 = new THREE.DirectionalLight(0xffffff, 2);
+light1.position.set(4, 5, 5);
+scene.add(light1);
+
+const light2 = new THREE.DirectionalLight(0xffffff, 1);
+light2.position.set(-4, 2, -4);
+scene.add(light2);
+
+let meshes = [];
+let model = null;
+let texturaCargada = null;
+let isPointerDown = false;
+
+let fuerzaTela = 0.04;
+let radioToque = 0.20;
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+const loader = new GLTFLoader();
+
+loader.load(
+  "CAMISETA.glb",
+  (gltf) => {
+    model = gltf.scene;
+    scene.add(model);
+
+    model.traverse((child) => {
+      if (child.isMesh && child.geometry && child.geometry.attributes.position) {
+        child.geometry = child.geometry.clone();
+        child.geometry.computeVertexNormals();
+
+        child.userData.originalPositions = child.geometry.attributes.position.array.slice();
+        child.userData.velocities = new Float32Array(child.geometry.attributes.position.array.length);
+
+        meshes.push(child);
+      }
+    });
+
+    centerModel(model);
+  },
+  undefined,
+  (error) => {
+    console.error(error);
+    document.getElementById("info").textContent =
+      "Error cargando CAMISETA.glb. Revisa que el nombre sea exacto.";
+  }
+);
+
+function centerModel(object) {
+  const box = new THREE.Box3().setFromObject(object);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+
+  object.position.sub(center);
+
+  const maxDim = Math.max(size.x, size.y, size.z);
+  camera.position.set(0, maxDim * 0.4, maxDim * 2.6);
+  controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+window.addEventListener("pointerdown", () => {
+  isPointerDown = true;
+});
+
+window.addEventListener("pointerup", () => {
+  isPointerDown = false;
+});
+
+window.addEventListener("pointermove", (event) => {
+  if (!isPointerDown || meshes.length === 0) return;
+
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouse, camera);
+
+  const hits = raycaster.intersectObjects(meshes, true);
+
+  if (hits.length > 0) {
+    deformMesh(hits[0].object, hits[0].point);
+  }
+});
+
+function deformMesh(mesh, worldPoint) {
+  const pos = mesh.geometry.attributes.position;
+  const localPoint = mesh.worldToLocal(worldPoint.clone());
+  const velocities = mesh.userData.velocities;
+
+  for (let i = 0; i < pos.count; i++) {
+    const ix = i * 3;
+
+    const x = pos.array[ix];
+    const y = pos.array[ix + 1];
+    const z = pos.array[ix + 2];
+
+    const dx = x - localPoint.x;
+    const dy = y - localPoint.y;
+    const dz = z - localPoint.z;
+
+    const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+    if (dist < radioToque) {
+      const force = (1 - dist / radioToque) * fuerzaTela;
+      velocities[ix + 2] -= force;
+    }
+  }
+}
+
+function updateCloth() {
+  meshes.forEach((mesh) => {
+    const pos = mesh.geometry.attributes.position;
+    const original = mesh.userData.originalPositions;
+    const velocities = mesh.userData.velocities;
+
+    for (let i = 0; i < pos.array.length; i++) {
+      const spring = (original[i] - pos.array[i]) * 0.08;
+      velocities[i] += spring;
+      velocities[i] *= 0.88;
+      pos.array[i] += velocities[i];
+    }
+
+    pos.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  });
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  updateCloth();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+document.getElementById("inputTextura").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
+
   reader.onload = () => {
     texturaCargada = reader.result;
-    alert("✅ Textura cargada. Pulsa 'Aplicar al modelo'.");
+    alert("✅ Textura cargada. Pulsa 'Aplicar textura'.");
   };
+
   reader.readAsDataURL(file);
 });
 
-// Aplicar textura forzada por UV
-document.getElementById('btnAplicar').addEventListener('click', async () => {
+document.getElementById("btnAplicar").addEventListener("click", () => {
   if (!texturaCargada) {
     alert("⚠️ Primero selecciona una imagen.");
     return;
   }
 
-  try {
-    await viewer.updateComplete;
-    await viewer.model?.updateComplete;
+  const textureLoader = new THREE.TextureLoader();
 
-    const textura = await viewer.createTexture(texturaCargada);
-    const materiales = viewer.model?.materials;
+  textureLoader.load(texturaCargada, (texture) => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.flipY = false;
 
-    if (!materiales || materiales.length === 0) {
-      alert("❌ El modelo no tiene materiales editables.");
-      return;
-    }
-
-    let aplicado = false;
-
-    for (const mat of materiales) {
-      if (mat?.pbrMetallicRoughness) {
-        mat.pbrMetallicRoughness.setBaseColorTexture(textura);
-        mat.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
-        aplicado = true;
-      }
-    }
-
-    // Recorre nodos (fallback adicional)
-    viewer.model?.traverse((node) => {
-      if (node?.material?.pbrMetallicRoughness) {
-        node.material.pbrMetallicRoughness.setBaseColorTexture(textura);
-        node.material.pbrMetallicRoughness.setBaseColorFactor([1, 1, 1, 1]);
-        aplicado = true;
+    meshes.forEach((mesh) => {
+      if (mesh.material) {
+        mesh.material = mesh.material.clone();
+        mesh.material.map = texture;
+        mesh.material.needsUpdate = true;
       }
     });
 
-    if (aplicado) {
-      alert("✅ Textura aplicada correctamente.");
-    } else {
-      alert("❌ No se pudieron modificar los materiales.");
-    }
-  } catch (err) {
-    console.error("Error aplicando textura:", err);
-    alert("❌ Error al aplicar la textura.");
-  }
+    alert("✅ Textura aplicada.");
+  });
 });
 
-// Luz (exposure)
-const luzSlider = document.getElementById('luzSlider');
-const luzValue = document.getElementById('luzValue');
+const luzSlider = document.getElementById("luzSlider");
+const luzValue = document.getElementById("luzValue");
 
-viewer.exposure = parseFloat(luzSlider.value);
-luzValue.textContent = viewer.exposure;
-
-luzSlider.addEventListener('input', (e) => {
+luzSlider.addEventListener("input", (e) => {
   const value = parseFloat(e.target.value);
-  viewer.exposure = value;
+  ambientLight.intensity = value;
+  light1.intensity = value + 0.5;
   luzValue.textContent = value.toFixed(2);
 });
 
-// Exportar imagen
-document.getElementById('btnExportar').addEventListener('click', async () => {
-  const blob = await viewer.toBlob({ idealAspect: true });
-  const url = URL.createObjectURL(blob);
+const fuerzaSlider = document.getElementById("fuerzaSlider");
+const fuerzaValue = document.getElementById("fuerzaValue");
 
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'modelo_3d.png';
-  a.click();
+fuerzaSlider.addEventListener("input", (e) => {
+  fuerzaTela = parseFloat(e.target.value);
+  fuerzaValue.textContent = fuerzaTela.toFixed(3);
 });
 
-// Minimizar/Maximizar panel
-const controlPanel = document.getElementById('controlPanel');
-const toggleBtn = document.getElementById('togglePanel');
-const minimizarBtn = document.getElementById('btnMinimizar');
+const radioSlider = document.getElementById("radioSlider");
+const radioValue = document.getElementById("radioValue");
 
-minimizarBtn.addEventListener('click', () => {
-  controlPanel.style.display = 'none';
-  toggleBtn.style.display = 'block';
+radioSlider.addEventListener("input", (e) => {
+  radioToque = parseFloat(e.target.value);
+  radioValue.textContent = radioToque.toFixed(2);
 });
 
-toggleBtn.addEventListener('click', () => {
-  controlPanel.style.display = 'block';
-  toggleBtn.style.display = 'none';
+document.getElementById("btnExportar").addEventListener("click", () => {
+  const link = document.createElement("a");
+  link.download = "modelo_3d.png";
+  link.href = renderer.domElement.toDataURL("image/png");
+  link.click();
+});
+
+const controlPanel = document.getElementById("controlPanel");
+const toggleBtn = document.getElementById("togglePanel");
+const minimizarBtn = document.getElementById("btnMinimizar");
+
+minimizarBtn.addEventListener("click", () => {
+  controlPanel.style.display = "none";
+  toggleBtn.style.display = "block";
+});
+
+toggleBtn.addEventListener("click", () => {
+  controlPanel.style.display = "block";
+  toggleBtn.style.display = "none";
+});
+
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
 
