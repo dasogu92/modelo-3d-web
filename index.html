@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Camiseta 3D interactiva</title>
 
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.158.0/examples/jsm/"
+    }
+  }
+  </script>
+
   <style>
     body {
       margin: 0;
@@ -107,12 +116,12 @@
 
 <button id="togglePanel">🔼 Mostrar panel</button>
 
-<div id="info">Mantén pulsado y arrastra sobre la camiseta</div>
+<div id="info">Cargando modelo...</div>
 
 <script type="module">
-import * as THREE from "https://unpkg.com/three@0.158.0/build/three.module.js";
-import { GLTFLoader } from "https://unpkg.com/three@0.158.0/examples/jsm/loaders/GLTFLoader.js";
-import { OrbitControls } from "https://unpkg.com/three@0.158.0/examples/jsm/controls/OrbitControls.js";
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
@@ -162,7 +171,7 @@ const mouse = new THREE.Vector2();
 const loader = new GLTFLoader();
 
 loader.load(
-  "CAMISETA.glb",
+  "./CAMISETA.glb",
   (gltf) => {
     model = gltf.scene;
     scene.add(model);
@@ -172,20 +181,25 @@ loader.load(
         child.geometry = child.geometry.clone();
         child.geometry.computeVertexNormals();
 
-        child.userData.originalPositions = child.geometry.attributes.position.array.slice();
-        child.userData.velocities = new Float32Array(child.geometry.attributes.position.array.length);
+        child.userData.originalPositions =
+          child.geometry.attributes.position.array.slice();
+
+        child.userData.velocities =
+          new Float32Array(child.geometry.attributes.position.array.length);
 
         meshes.push(child);
       }
     });
 
     centerModel(model);
+    document.getElementById("info").textContent =
+      "Mantén pulsado y arrastra sobre la camiseta";
   },
   undefined,
   (error) => {
     console.error(error);
     document.getElementById("info").textContent =
-      "Error cargando CAMISETA.glb. Revisa que el nombre sea exacto.";
+      "Error cargando CAMISETA.glb. Revisa nombre y ubicación.";
   }
 );
 
