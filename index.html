@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Camiseta 3D interactiva</title>
+  <title>Camiseta 3D con viento</title>
 
   <script type="importmap">
   {
@@ -31,11 +31,11 @@
       top: 10px;
       left: 10px;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255,255,255,.95);
       padding: 16px;
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-      max-width: 300px;
+      width: 290px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
     }
 
     .panel label {
@@ -56,7 +56,7 @@
       padding: 8px;
       background: #333;
       color: white;
-      border: none;
+      border: 0;
       border-radius: 6px;
       cursor: pointer;
     }
@@ -71,12 +71,12 @@
       left: 10px;
       z-index: 20;
       background: #333;
-      color: #fff;
-      border: none;
-      padding: 6px 10px;
+      color: white;
+      border: 0;
+      padding: 7px 10px;
       border-radius: 6px;
-      cursor: pointer;
       display: none;
+      cursor: pointer;
     }
 
     #info {
@@ -84,7 +84,7 @@
       bottom: 12px;
       left: 12px;
       color: white;
-      background: rgba(0,0,0,0.55);
+      background: rgba(0,0,0,.55);
       padding: 8px 12px;
       border-radius: 8px;
       font-size: 13px;
@@ -96,20 +96,29 @@
 <body>
 
 <div class="panel" id="controlPanel">
-  <label>Cargar textura de diseño (.jpg/.png)</label>
+  <label>Cargar textura de diseño</label>
   <input type="file" id="inputTextura" accept="image/*" />
-
   <button id="btnAplicar">🎨 Aplicar textura</button>
 
   <label>Luz: <span id="luzValue">1.50</span></label>
   <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="1.5" />
 
-  <label>Fuerza tela: <span id="fuerzaValue">0.04</span></label>
-  <input type="range" id="fuerzaSlider" min="0.005" max="0.12" step="0.005" value="0.04" />
+  <label>Brisa / viento: <span id="windValue">0.020</span></label>
+  <input type="range" id="windSlider" min="0" max="0.08" step="0.001" value="0.020" />
 
-  <label>Radio toque: <span id="radioValue">0.20</span></label>
-  <input type="range" id="radioSlider" min="0.05" max="0.60" step="0.01" value="0.20" />
+  <label>Velocidad brisa: <span id="speedValue">1.20</span></label>
+  <input type="range" id="speedSlider" min="0.1" max="4" step="0.05" value="1.2" />
 
+  <label>Suavidad tela: <span id="softValue">0.035</span></label>
+  <input type="range" id="softSlider" min="0.005" max="0.12" step="0.001" value="0.035" />
+
+  <label>Toque ratón: <span id="touchValue">0.018</span></label>
+  <input type="range" id="touchSlider" min="0" max="0.08" step="0.001" value="0.018" />
+
+  <label>Radio toque: <span id="radioValue">0.35</span></label>
+  <input type="range" id="radioSlider" min="0.05" max="0.8" step="0.01" value="0.35" />
+
+  <button id="btnBrisa">🌬️ Brisa activada</button>
   <button id="btnExportar">📸 Exportar imagen</button>
   <button id="btnMinimizar">🔽 Ocultar panel</button>
 </div>
@@ -145,6 +154,10 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+
+let initialCameraPosition = new THREE.Vector3();
+let initialTarget = new THREE.Vector3();
 
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
 scene.add(ambientLight);
@@ -162,15 +175,18 @@ let model = null;
 let texturaCargada = null;
 let isPointerDown = false;
 
-let fuerzaTela = 0.04;
-let radioToque = 0.20;
+let windStrength = 0.020;
+let windSpeed = 1.2;
+let softness = 0.035;
+let touchStrength = 0.018;
+let touchRadius = 0.35;
+let breezeEnabled = true;
 
+const clock = new THREE.Clock();
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-const loader = new GLTFLoader();
-
-loader.load(
+new GLTFLoader().load(
   "./CAMISETA.glb",
   (gltf) => {
     model = gltf.scene;
@@ -181,19 +197,24 @@ loader.load(
         child.geometry = child.geometry.clone();
         child.geometry.computeVertexNormals();
 
-        child.userData.originalPositions =
-          child.geometry.attributes.position.array.slice();
+        const pos = child.geometry.attributes.position;
 
-        child.userData.velocities =
-          new Float32Array(child.geometry.attributes.position.array.length);
+        child.userData.originalPositions = pos.array.slice();
+        child.userData.velocities = new Float32Array(pos.array.length);
+        child.userData.windOffsets = new Float32Array(pos.count);
+
+        for (let i = 0; i < pos.count; i++) {
+          child.userData.windOffsets[i] = Math.random() * Math.PI * 2;
+        }
 
         meshes.push(child);
       }
     });
 
     centerModel(model);
+
     document.getElementById("info").textContent =
-      "Mantén pulsado y arrastra sobre la camiseta";
+      "Brisa automática activa. Arrastra sobre la camiseta para tocar la tela. Doble click reinicia la vista.";
   },
   undefined,
   (error) => {
@@ -211,9 +232,13 @@ function centerModel(object) {
   object.position.sub(center);
 
   const maxDim = Math.max(size.x, size.y, size.z);
-  camera.position.set(0, maxDim * 0.4, maxDim * 2.6);
+
+  camera.position.set(0, maxDim * 0.35, maxDim * 2.8);
   controls.target.set(0, 0, 0);
   controls.update();
+
+  initialCameraPosition.copy(camera.position);
+  initialTarget.copy(controls.target);
 }
 
 window.addEventListener("pointerdown", () => {
@@ -222,6 +247,16 @@ window.addEventListener("pointerdown", () => {
 
 window.addEventListener("pointerup", () => {
   isPointerDown = false;
+});
+
+window.addEventListener("pointerleave", () => {
+  isPointerDown = false;
+});
+
+window.addEventListener("dblclick", () => {
+  camera.position.copy(initialCameraPosition);
+  controls.target.copy(initialTarget);
+  controls.update();
 });
 
 window.addEventListener("pointermove", (event) => {
@@ -247,34 +282,57 @@ function deformMesh(mesh, worldPoint) {
   for (let i = 0; i < pos.count; i++) {
     const ix = i * 3;
 
-    const x = pos.array[ix];
-    const y = pos.array[ix + 1];
-    const z = pos.array[ix + 2];
-
-    const dx = x - localPoint.x;
-    const dy = y - localPoint.y;
-    const dz = z - localPoint.z;
+    const dx = pos.array[ix] - localPoint.x;
+    const dy = pos.array[ix + 1] - localPoint.y;
+    const dz = pos.array[ix + 2] - localPoint.z;
 
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-    if (dist < radioToque) {
-      const force = (1 - dist / radioToque) * fuerzaTela;
-      velocities[ix + 2] -= force;
+    if (dist < touchRadius) {
+      const falloff = Math.pow(1 - dist / touchRadius, 2);
+      velocities[ix + 2] -= falloff * touchStrength;
     }
   }
 }
 
 function updateCloth() {
+  const t = clock.getElapsedTime();
+
   meshes.forEach((mesh) => {
     const pos = mesh.geometry.attributes.position;
     const original = mesh.userData.originalPositions;
     const velocities = mesh.userData.velocities;
+    const windOffsets = mesh.userData.windOffsets;
 
-    for (let i = 0; i < pos.array.length; i++) {
-      const spring = (original[i] - pos.array[i]) * 0.08;
-      velocities[i] += spring;
-      velocities[i] *= 0.88;
-      pos.array[i] += velocities[i];
+    for (let i = 0; i < pos.count; i++) {
+      const ix = i * 3;
+
+      const ox = original[ix];
+      const oy = original[ix + 1];
+
+      let wind = 0;
+
+      if (breezeEnabled) {
+        const wave1 = Math.sin(t * windSpeed + ox * 5.0 + oy * 2.5 + windOffsets[i]);
+        const wave2 = Math.sin(t * windSpeed * 1.7 + ox * 9.0 + windOffsets[i] * 0.5);
+        wind = (wave1 * 0.65 + wave2 * 0.35) * windStrength;
+      }
+
+      const targetX = original[ix];
+      const targetY = original[ix + 1];
+      const targetZ = original[ix + 2] + wind;
+
+      velocities[ix] += (targetX - pos.array[ix]) * softness;
+      velocities[ix + 1] += (targetY - pos.array[ix + 1]) * softness;
+      velocities[ix + 2] += (targetZ - pos.array[ix + 2]) * softness;
+
+      velocities[ix] *= 0.90;
+      velocities[ix + 1] *= 0.90;
+      velocities[ix + 2] *= 0.90;
+
+      pos.array[ix] += velocities[ix];
+      pos.array[ix + 1] += velocities[ix + 1];
+      pos.array[ix + 2] += velocities[ix + 2];
     }
 
     pos.needsUpdate = true;
@@ -284,8 +342,10 @@ function updateCloth() {
 
 function animate() {
   requestAnimationFrame(animate);
+
   controls.update();
   updateCloth();
+
   renderer.render(scene, camera);
 }
 
@@ -329,30 +389,47 @@ document.getElementById("btnAplicar").addEventListener("click", () => {
   });
 });
 
-const luzSlider = document.getElementById("luzSlider");
-const luzValue = document.getElementById("luzValue");
-
-luzSlider.addEventListener("input", (e) => {
+document.getElementById("luzSlider").addEventListener("input", (e) => {
   const value = parseFloat(e.target.value);
+
   ambientLight.intensity = value;
   light1.intensity = value + 0.5;
-  luzValue.textContent = value.toFixed(2);
+  light2.intensity = value * 0.7;
+
+  document.getElementById("luzValue").textContent = value.toFixed(2);
 });
 
-const fuerzaSlider = document.getElementById("fuerzaSlider");
-const fuerzaValue = document.getElementById("fuerzaValue");
-
-fuerzaSlider.addEventListener("input", (e) => {
-  fuerzaTela = parseFloat(e.target.value);
-  fuerzaValue.textContent = fuerzaTela.toFixed(3);
+document.getElementById("windSlider").addEventListener("input", (e) => {
+  windStrength = parseFloat(e.target.value);
+  document.getElementById("windValue").textContent = windStrength.toFixed(3);
 });
 
-const radioSlider = document.getElementById("radioSlider");
-const radioValue = document.getElementById("radioValue");
+document.getElementById("speedSlider").addEventListener("input", (e) => {
+  windSpeed = parseFloat(e.target.value);
+  document.getElementById("speedValue").textContent = windSpeed.toFixed(2);
+});
 
-radioSlider.addEventListener("input", (e) => {
-  radioToque = parseFloat(e.target.value);
-  radioValue.textContent = radioToque.toFixed(2);
+document.getElementById("softSlider").addEventListener("input", (e) => {
+  softness = parseFloat(e.target.value);
+  document.getElementById("softValue").textContent = softness.toFixed(3);
+});
+
+document.getElementById("touchSlider").addEventListener("input", (e) => {
+  touchStrength = parseFloat(e.target.value);
+  document.getElementById("touchValue").textContent = touchStrength.toFixed(3);
+});
+
+document.getElementById("radioSlider").addEventListener("input", (e) => {
+  touchRadius = parseFloat(e.target.value);
+  document.getElementById("radioValue").textContent = touchRadius.toFixed(2);
+});
+
+document.getElementById("btnBrisa").addEventListener("click", () => {
+  breezeEnabled = !breezeEnabled;
+
+  document.getElementById("btnBrisa").textContent = breezeEnabled
+    ? "🌬️ Brisa activada"
+    : "🌬️ Brisa desactivada";
 });
 
 document.getElementById("btnExportar").addEventListener("click", () => {
@@ -364,9 +441,8 @@ document.getElementById("btnExportar").addEventListener("click", () => {
 
 const controlPanel = document.getElementById("controlPanel");
 const toggleBtn = document.getElementById("togglePanel");
-const minimizarBtn = document.getElementById("btnMinimizar");
 
-minimizarBtn.addEventListener("click", () => {
+document.getElementById("btnMinimizar").addEventListener("click", () => {
   controlPanel.style.display = "none";
   toggleBtn.style.display = "block";
 });
@@ -379,6 +455,7 @@ toggleBtn.addEventListener("click", () => {
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
+
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 </script>
