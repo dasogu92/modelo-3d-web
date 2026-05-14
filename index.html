@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Visor 3D Camiseta</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visor GLB</title>
 
   <script type="importmap">
   {
@@ -26,88 +26,20 @@
       display: block;
     }
 
-    .panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 10;
-      background: rgba(255,255,255,.95);
-      padding: 16px;
-      border-radius: 10px;
-      width: 290px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.25);
-    }
-
-    .panel label {
-      font-weight: bold;
-      font-size: 13px;
-      margin-top: 10px;
-      display: block;
-    }
-
-    .panel input,
-    .panel button {
-      width: 100%;
-      margin-top: 8px;
-      margin-bottom: 10px;
-    }
-
-    .panel button {
-      padding: 8px;
-      background: #333;
-      color: white;
-      border: 0;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .panel button:hover {
-      background: #555;
-    }
-
-    #togglePanel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 20;
-      background: #333;
-      color: white;
-      border: 0;
-      padding: 7px 10px;
-      border-radius: 6px;
-      display: none;
-      cursor: pointer;
-    }
-
     #info {
       position: absolute;
-      bottom: 12px;
       left: 12px;
+      bottom: 12px;
       color: white;
-      background: rgba(0,0,0,.55);
+      background: rgba(0, 0, 0, 0.55);
       padding: 8px 12px;
       border-radius: 8px;
       font-size: 13px;
-      z-index: 5;
     }
   </style>
 </head>
 
 <body>
-
-<div class="panel" id="controlPanel">
-  <label>Cargar textura de diseño</label>
-  <input type="file" id="inputTextura" accept="image/*" />
-  <button id="btnAplicar">🎨 Aplicar textura</button>
-
-  <label>Luz: <span id="luzValue">1.50</span></label>
-  <input type="range" id="luzSlider" min="0" max="5" step="0.01" value="1.5" />
-
-  <button id="btnExportar">📸 Exportar imagen</button>
-  <button id="btnMinimizar">🔽 Ocultar panel</button>
-</div>
-
-<button id="togglePanel">🔼 Mostrar panel</button>
 
 <div id="info">Cargando modelo...</div>
 
@@ -120,95 +52,102 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x111111);
 
 const camera = new THREE.PerspectiveCamera(
-  45,
+  35,
   window.innerWidth / window.innerHeight,
   0.01,
   1000
 );
 
 const renderer = new THREE.WebGLRenderer({
-  antialias: true,
-  preserveDrawingBuffer: true
+  antialias: true
 });
 
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1;
+
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.06;
+controls.dampingFactor = 0.05;
 
-let initialCameraPosition = new THREE.Vector3();
-let initialTarget = new THREE.Vector3();
-
-const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+const ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
 scene.add(ambientLight);
 
-const light1 = new THREE.DirectionalLight(0xffffff, 2);
-light1.position.set(4, 5, 5);
-scene.add(light1);
+const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+keyLight.position.set(3, 5, 4);
+scene.add(keyLight);
 
-const light2 = new THREE.DirectionalLight(0xffffff, 1);
-light2.position.set(-4, 2, -4);
-scene.add(light2);
+const fillLight = new THREE.DirectionalLight(0xffffff, 1.2);
+fillLight.position.set(-4, 2, -3);
+scene.add(fillLight);
+
+const backLight = new THREE.DirectionalLight(0xffffff, 1);
+backLight.position.set(0, 4, -5);
+scene.add(backLight);
 
 let model = null;
-let meshes = [];
-let texturaCargada = null;
 
-new GLTFLoader().load(
+const loader = new GLTFLoader();
+
+loader.load(
   "./CAMISETA.glb",
-  (gltf) => {
+  function (gltf) {
     model = gltf.scene;
     scene.add(model);
 
     model.traverse((child) => {
       if (child.isMesh) {
-        meshes.push(child);
+        child.frustumCulled = false;
 
-        if (child.geometry) {
-          child.geometry.computeVertexNormals();
+        if (child.material) {
+          child.material.side = THREE.DoubleSide;
+          child.material.needsUpdate = true;
         }
       }
     });
 
-    centerModel(model);
+    fitModelToView(model);
 
     document.getElementById("info").textContent =
-      "Modelo cargado. Usa el ratón para rotar, hacer zoom o mover la vista. Doble click reinicia la cámara.";
+      "Modelo cargado. Arrastra para rotar, rueda para zoom.";
   },
-  undefined,
-  (error) => {
+  function (xhr) {
+    if (xhr.total) {
+      const percent = Math.round((xhr.loaded / xhr.total) * 100);
+      document.getElementById("info").textContent = `Cargando modelo... ${percent}%`;
+    }
+  },
+  function (error) {
     console.error(error);
     document.getElementById("info").textContent =
-      "Error cargando CAMISETA.glb. Revisa nombre y ubicación.";
+      "Error cargando CAMISETA.glb. Revisa que esté junto al HTML.";
   }
 );
 
-function centerModel(object) {
+function fitModelToView(object) {
   const box = new THREE.Box3().setFromObject(object);
-  const center = box.getCenter(new THREE.Vector3());
   const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
 
-  object.position.sub(center);
+  object.position.x -= center.x;
+  object.position.y -= center.y;
+  object.position.z -= center.z;
 
-  const maxDim = Math.max(size.x, size.y, size.z);
+  const maxSize = Math.max(size.x, size.y, size.z);
+  const distance = maxSize * 2.2;
 
-  camera.position.set(0, maxDim * 0.35, maxDim * 2.8);
+  camera.position.set(0, maxSize * 0.2, distance);
+  camera.near = maxSize / 100;
+  camera.far = maxSize * 100;
+  camera.updateProjectionMatrix();
+
   controls.target.set(0, 0, 0);
   controls.update();
-
-  initialCameraPosition.copy(camera.position);
-  initialTarget.copy(controls.target);
 }
-
-window.addEventListener("dblclick", () => {
-  camera.position.copy(initialCameraPosition);
-  controls.target.copy(initialTarget);
-  controls.update();
-});
 
 function animate() {
   requestAnimationFrame(animate);
@@ -218,74 +157,6 @@ function animate() {
 }
 
 animate();
-
-document.getElementById("inputTextura").addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-
-  reader.onload = () => {
-    texturaCargada = reader.result;
-    alert("✅ Textura cargada. Pulsa 'Aplicar textura'.");
-  };
-
-  reader.readAsDataURL(file);
-});
-
-document.getElementById("btnAplicar").addEventListener("click", () => {
-  if (!texturaCargada) {
-    alert("⚠️ Primero selecciona una imagen.");
-    return;
-  }
-
-  const textureLoader = new THREE.TextureLoader();
-
-  textureLoader.load(texturaCargada, (texture) => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.flipY = false;
-
-    meshes.forEach((mesh) => {
-      if (mesh.material) {
-        mesh.material = mesh.material.clone();
-        mesh.material.map = texture;
-        mesh.material.needsUpdate = true;
-      }
-    });
-
-    alert("✅ Textura aplicada.");
-  });
-});
-
-document.getElementById("luzSlider").addEventListener("input", (e) => {
-  const value = parseFloat(e.target.value);
-
-  ambientLight.intensity = value;
-  light1.intensity = value + 0.5;
-  light2.intensity = value * 0.7;
-
-  document.getElementById("luzValue").textContent = value.toFixed(2);
-});
-
-document.getElementById("btnExportar").addEventListener("click", () => {
-  const link = document.createElement("a");
-  link.download = "modelo_3d.png";
-  link.href = renderer.domElement.toDataURL("image/png");
-  link.click();
-});
-
-const controlPanel = document.getElementById("controlPanel");
-const toggleBtn = document.getElementById("togglePanel");
-
-document.getElementById("btnMinimizar").addEventListener("click", () => {
-  controlPanel.style.display = "none";
-  toggleBtn.style.display = "block";
-});
-
-toggleBtn.addEventListener("click", () => {
-  controlPanel.style.display = "block";
-  toggleBtn.style.display = "none";
-});
 
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
