@@ -15,73 +15,73 @@
   </script>
 
   <style>
-    body{
-      margin:0;
-      overflow:hidden;
-      background:#e5e5e5;
-      font-family:Arial,sans-serif;
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #e5e5e5;
+      font-family: Arial, sans-serif;
     }
 
-    canvas{
-      display:block;
+    canvas {
+      display: block;
     }
 
-    .panel{
-      position:absolute;
-      top:12px;
-      left:12px;
-      width:320px;
-      background:white;
-      padding:14px;
-      border-radius:8px;
-      box-shadow:0 4px 20px rgba(0,0,0,.18);
-      z-index:10;
-      max-height:calc(100vh - 24px);
-      overflow:auto;
+    .panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 320px;
+      background: white;
+      padding: 14px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.18);
+      z-index: 10;
+      max-height: calc(100vh - 24px);
+      overflow: auto;
     }
 
-    label{
-      display:block;
-      font-size:12px;
-      font-weight:bold;
-      margin:10px 0 5px;
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      margin: 10px 0 5px;
     }
 
     select,
     button,
     input[type="range"],
-    input[type="color"]{
-      width:100%;
-      margin-bottom:8px;
+    input[type="color"] {
+      width: 100%;
+      margin-bottom: 8px;
     }
 
     select,
-    button{
-      padding:9px;
-      border-radius:6px;
-      border:1px solid #ccc;
+    button {
+      padding: 9px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
-    button{
-      background:#222;
-      color:white;
-      border:none;
-      cursor:pointer;
+    button {
+      background: #222;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
 
-    .row{
-      display:flex;
-      justify-content:space-between;
-      font-size:12px;
-      color:#333;
+    .row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #333;
     }
 
-    #info{
-      font-size:12px;
-      line-height:1.4;
-      color:#333;
-      white-space:pre-line;
-      margin-top:8px;
+    #info {
+      font-size: 12px;
+      line-height: 1.4;
+      color: #333;
+      white-space: pre-line;
+      margin-top: 8px;
     }
   </style>
 </head>
@@ -89,7 +89,6 @@
 <body>
 
 <div class="panel">
-
   <label>Modelo</label>
 
   <select id="modelSelect">
@@ -100,142 +99,62 @@
   <button id="resetBtn">Reset vista</button>
 
   <label>Luz ambiente</label>
-  <div class="row">
-    <span>Intensidad</span>
-    <span id="ambientVal">1.80</span>
-  </div>
-
-  <input
-    type="range"
-    id="ambientSlider"
-    min="0"
-    max="4"
-    step="0.05"
-    value="1.8"
-  >
+  <div class="row"><span>Intensidad</span><span id="ambientVal">1.80</span></div>
+  <input type="range" id="ambientSlider" min="0" max="4" step="0.05" value="1.8">
 
   <label>Luz frontal</label>
-  <div class="row">
-    <span>Intensidad</span>
-    <span id="frontVal">2.20</span>
-  </div>
-
-  <input
-    type="range"
-    id="frontSlider"
-    min="0"
-    max="6"
-    step="0.05"
-    value="2.2"
-  >
+  <div class="row"><span>Intensidad</span><span id="frontVal">2.20</span></div>
+  <input type="range" id="frontSlider" min="0" max="6" step="0.05" value="2.2">
 
   <label>Luz lateral</label>
-  <div class="row">
-    <span>Intensidad</span>
-    <span id="sideVal">1.20</span>
-  </div>
-
-  <input
-    type="range"
-    id="sideSlider"
-    min="0"
-    max="6"
-    step="0.05"
-    value="1.2"
-  >
+  <div class="row"><span>Intensidad</span><span id="sideVal">1.20</span></div>
+  <input type="range" id="sideSlider" min="0" max="6" step="0.05" value="1.2">
 
   <label>Contraluz</label>
-  <div class="row">
-    <span>Intensidad</span>
-    <span id="backVal">0.80</span>
-  </div>
-
-  <input
-    type="range"
-    id="backSlider"
-    min="0"
-    max="6"
-    step="0.05"
-    value="0.8"
-  >
+  <div class="row"><span>Intensidad</span><span id="backVal">0.80</span></div>
+  <input type="range" id="backSlider" min="0" max="6" step="0.05" value="0.8">
 
   <label>Brillo material</label>
+  <div class="row"><span>Shininess</span><span id="shineVal">10</span></div>
+  <input type="range" id="shineSlider" min="0" max="80" step="1" value="10">
 
-  <div class="row">
-    <span>Shininess</span>
-    <span id="shineVal">10</span>
-  </div>
-
-  <input
-    type="range"
-    id="shineSlider"
-    min="0"
-    max="80"
-    step="1"
-    value="10"
-  >
-
-  <label>Color exterior</label>
-
-  <input
-    type="color"
-    id="exteriorColor"
-    value="#050505"
-  >
+  <label>Color exterior / GLB</label>
+  <input type="color" id="exteriorColor" value="#050505">
 
   <label>Color interior</label>
+  <input type="color" id="interiorColor" value="#777777">
 
-  <input
-    type="color"
-    id="interiorColor"
-    value="#777777"
-  >
-
-  <div id="info">
-    Cargando...
-  </div>
-
+  <div id="info">Cargando...</div>
 </div>
 
 <script type="module">
-
 import * as THREE from "three";
-
-import { OrbitControls }
-from "three/addons/controls/OrbitControls.js";
-
-import { GLTFLoader }
-from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MODELOS = {
-
-  glb:{
-    tipo:"glb",
-    nombre:"Modelo GLB",
-    url:"./modelos/1001/modelo.glb"
+  glb: {
+    tipo: "glb",
+    nombre: "Modelo GLB",
+    url: "./modelos/1001/modelo.glb"
   },
 
-  legacy:{
-    tipo:"legacy",
-    nombre:"MAILLOT MC CX UNI 1457",
-    basePath:"./modelos/1457/",
-    manifest:"manifest.json"
+  legacy: {
+    tipo: "legacy",
+    nombre: "MAILLOT MC CX UNI 1457",
+    basePath: "./modelos/1457/",
+    manifest: "manifest.json"
   }
-
 };
 
 let scene;
 let camera;
 let renderer;
 let controls;
-
 let currentModel = null;
 
-let initialCameraPosition =
-  new THREE.Vector3();
-
-let initialTarget =
-  new THREE.Vector3();
+let initialCameraPosition = new THREE.Vector3();
+let initialTarget = new THREE.Vector3();
 
 let ambientLight;
 let frontLight;
@@ -244,979 +163,533 @@ let backLight;
 
 let exteriorMaterial = null;
 let interiorMaterial = null;
+let glbMaterials = [];
 
-const info =
-  document.getElementById("info");
-
-const modelSelect =
-  document.getElementById("modelSelect");
-
-const resetBtn =
-  document.getElementById("resetBtn");
+const info = document.getElementById("info");
+const modelSelect = document.getElementById("modelSelect");
+const resetBtn = document.getElementById("resetBtn");
 
 init();
 wireUI();
 loadSelectedModel();
 
-modelSelect.addEventListener(
-  "change",
-  loadSelectedModel
-);
+modelSelect.addEventListener("change", loadSelectedModel);
 
-resetBtn.addEventListener(
-  "click",
-  ()=>{
-    if(currentModel){
-      fitToView(currentModel);
-    }
-  }
-);
+resetBtn.addEventListener("click", () => {
+  if (currentModel) fitToView(currentModel);
+});
 
-window.addEventListener(
-  "dblclick",
-  ()=>{
+window.addEventListener("dblclick", () => {
+  camera.position.copy(initialCameraPosition);
+  controls.target.copy(initialTarget);
+  controls.update();
+});
 
-    camera.position.copy(
-      initialCameraPosition
-    );
-
-    controls.target.copy(
-      initialTarget
-    );
-
-    controls.update();
-
-  }
-);
-
-function init(){
-
+function init() {
   scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xe5e5e5);
 
-  scene.background =
-    new THREE.Color(0xe5e5e5);
-
-  camera =
-    new THREE.PerspectiveCamera(
-      35,
-      window.innerWidth /
-      window.innerHeight,
-      0.01,
-      10000
-    );
-
-  renderer =
-    new THREE.WebGLRenderer({
-      antialias:true
-    });
-
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
+  camera = new THREE.PerspectiveCamera(
+    35,
+    window.innerWidth / window.innerHeight,
+    0.01,
+    10000
   );
 
-  renderer.setPixelRatio(
-    Math.min(
-      window.devicePixelRatio,
-      2
-    )
-  );
+  renderer = new THREE.WebGLRenderer({
+    antialias: true
+  });
 
-  renderer.outputColorSpace =
-    THREE.SRGBColorSpace;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  document.body.appendChild(
-    renderer.domElement
-  );
+  document.body.appendChild(renderer.domElement);
 
-  controls =
-    new OrbitControls(
-      camera,
-      renderer.domElement
-    );
-
+  controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
 
-  // ========= LUCES =========
-
-  ambientLight =
-    new THREE.AmbientLight(
-      0xffffff,
-      1.8
-    );
-
+  ambientLight = new THREE.AmbientLight(0xffffff, 1.8);
   scene.add(ambientLight);
 
-  frontLight =
-    new THREE.DirectionalLight(
-      0xffffff,
-      2.2
-    );
-
-  frontLight.position.set(
-    4,
-    5,
-    5
-  );
-
+  frontLight = new THREE.DirectionalLight(0xffffff, 2.2);
+  frontLight.position.set(4, 5, 5);
   scene.add(frontLight);
 
-  sideLight =
-    new THREE.DirectionalLight(
-      0xffffff,
-      1.2
-    );
-
-  sideLight.position.set(
-    -4,
-    3,
-    -3
-  );
-
+  sideLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  sideLight.position.set(-4, 3, -3);
   scene.add(sideLight);
 
-  backLight =
-    new THREE.DirectionalLight(
-      0xffffff,
-      0.8
-    );
-
-  backLight.position.set(
-    0,
-    4,
-    -5
-  );
-
+  backLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  backLight.position.set(0, 4, -5);
   scene.add(backLight);
 
-  window.addEventListener(
-    "resize",
-    onResize
-  );
+  window.addEventListener("resize", onResize);
 
   animate();
 }
 
-function wireUI(){
+function wireUI() {
+  const ambientSlider = document.getElementById("ambientSlider");
+  const frontSlider = document.getElementById("frontSlider");
+  const sideSlider = document.getElementById("sideSlider");
+  const backSlider = document.getElementById("backSlider");
+  const shineSlider = document.getElementById("shineSlider");
+  const exteriorColor = document.getElementById("exteriorColor");
+  const interiorColor = document.getElementById("interiorColor");
 
-  const ambientSlider =
-    document.getElementById(
-      "ambientSlider"
-    );
+  ambientSlider.addEventListener("input", () => {
+    const v = parseFloat(ambientSlider.value);
+    ambientLight.intensity = v;
+    document.getElementById("ambientVal").textContent = v.toFixed(2);
+  });
 
-  const frontSlider =
-    document.getElementById(
-      "frontSlider"
-    );
+  frontSlider.addEventListener("input", () => {
+    const v = parseFloat(frontSlider.value);
+    frontLight.intensity = v;
+    document.getElementById("frontVal").textContent = v.toFixed(2);
+  });
 
-  const sideSlider =
-    document.getElementById(
-      "sideSlider"
-    );
+  sideSlider.addEventListener("input", () => {
+    const v = parseFloat(sideSlider.value);
+    sideLight.intensity = v;
+    document.getElementById("sideVal").textContent = v.toFixed(2);
+  });
 
-  const backSlider =
-    document.getElementById(
-      "backSlider"
-    );
+  backSlider.addEventListener("input", () => {
+    const v = parseFloat(backSlider.value);
+    backLight.intensity = v;
+    document.getElementById("backVal").textContent = v.toFixed(2);
+  });
 
-  const shineSlider =
-    document.getElementById(
-      "shineSlider"
-    );
+  shineSlider.addEventListener("input", () => {
+    const v = parseFloat(shineSlider.value);
+    document.getElementById("shineVal").textContent = v.toFixed(0);
 
-  const exteriorColor =
-    document.getElementById(
-      "exteriorColor"
-    );
-
-  const interiorColor =
-    document.getElementById(
-      "interiorColor"
-    );
-
-  ambientSlider.addEventListener(
-    "input",
-    ()=>{
-
-      const v =
-        parseFloat(
-          ambientSlider.value
-        );
-
-      ambientLight.intensity = v;
-
-      document.getElementById(
-        "ambientVal"
-      ).textContent =
-        v.toFixed(2);
-
+    if (exteriorMaterial && "shininess" in exteriorMaterial) {
+      exteriorMaterial.shininess = v;
+      exteriorMaterial.needsUpdate = true;
     }
-  );
 
-  frontSlider.addEventListener(
-    "input",
-    ()=>{
-
-      const v =
-        parseFloat(
-          frontSlider.value
-        );
-
-      frontLight.intensity = v;
-
-      document.getElementById(
-        "frontVal"
-      ).textContent =
-        v.toFixed(2);
-
+    if (interiorMaterial && "shininess" in interiorMaterial) {
+      interiorMaterial.shininess = v;
+      interiorMaterial.needsUpdate = true;
     }
-  );
 
-  sideSlider.addEventListener(
-    "input",
-    ()=>{
-
-      const v =
-        parseFloat(
-          sideSlider.value
-        );
-
-      sideLight.intensity = v;
-
-      document.getElementById(
-        "sideVal"
-      ).textContent =
-        v.toFixed(2);
-
-    }
-  );
-
-  backSlider.addEventListener(
-    "input",
-    ()=>{
-
-      const v =
-        parseFloat(
-          backSlider.value
-        );
-
-      backLight.intensity = v;
-
-      document.getElementById(
-        "backVal"
-      ).textContent =
-        v.toFixed(2);
-
-    }
-  );
-
-  shineSlider.addEventListener(
-    "input",
-    ()=>{
-
-      const v =
-        parseFloat(
-          shineSlider.value
-        );
-
-      document.getElementById(
-        "shineVal"
-      ).textContent =
-        v.toFixed(0);
-
-      if(exteriorMaterial){
-
-        exteriorMaterial.shininess = v;
-        exteriorMaterial.needsUpdate = true;
-
+    glbMaterials.forEach((mat) => {
+      if ("shininess" in mat) {
+        mat.shininess = v;
+        mat.needsUpdate = true;
       }
+    });
+  });
 
-      if(interiorMaterial){
+  exteriorColor.addEventListener("input", () => {
+    const color = exteriorColor.value;
 
-        interiorMaterial.shininess = v;
-        interiorMaterial.needsUpdate = true;
-
-      }
-
+    if (exteriorMaterial && exteriorMaterial.color) {
+      exteriorMaterial.color.set(color);
+      exteriorMaterial.needsUpdate = true;
     }
-  );
 
-  exteriorColor.addEventListener(
-    "input",
-    ()=>{
-
-      if(exteriorMaterial){
-
-        exteriorMaterial.color.set(
-          exteriorColor.value
-        );
-
-        exteriorMaterial.needsUpdate = true;
+    glbMaterials.forEach((mat) => {
+      if (mat.color) {
+        mat.color.set(color);
+        mat.needsUpdate = true;
       }
+    });
+  });
 
+  interiorColor.addEventListener("input", () => {
+    if (interiorMaterial && interiorMaterial.color) {
+      interiorMaterial.color.set(interiorColor.value);
+      interiorMaterial.needsUpdate = true;
     }
-  );
-
-  interiorColor.addEventListener(
-    "input",
-    ()=>{
-
-      if(interiorMaterial){
-
-        interiorMaterial.color.set(
-          interiorColor.value
-        );
-
-        interiorMaterial.needsUpdate = true;
-      }
-
-    }
-  );
+  });
 }
 
-async function loadSelectedModel(){
+async function loadSelectedModel() {
+  const key = modelSelect.value;
+  const item = MODELOS[key];
 
-  const key =
-    modelSelect.value;
+  info.textContent = "Cargando " + item.nombre + "...";
 
-  const item =
-    MODELOS[key];
+  exteriorMaterial = null;
+  interiorMaterial = null;
+  glbMaterials = [];
 
-  info.textContent =
-    "Cargando " +
-    item.nombre +
-    "...";
-
-  if(currentModel){
-
+  if (currentModel) {
     scene.remove(currentModel);
-
     disposeObject(currentModel);
-
     currentModel = null;
   }
 
-  try{
-
+  try {
     let loaded;
 
-    if(item.tipo === "glb"){
-
-      loaded =
-        await loadGLB(item.url);
-
-    }else{
-
-      loaded =
-        await loadLegacy(
-          item.basePath,
-          item.manifest
-        );
-
+    if (item.tipo === "glb") {
+      loaded = await loadGLB(item.url);
+    } else {
+      loaded = await loadLegacy(item.basePath, item.manifest);
     }
 
     currentModel = loaded;
-
     scene.add(currentModel);
 
     fitToView(currentModel);
 
-    info.textContent =
-      "Modelo cargado correctamente";
-
-  }catch(error){
-
+    info.textContent = "Modelo cargado correctamente";
+  } catch (error) {
     console.error(error);
-
-    info.textContent =
-      "Error:\n" +
-      error.message;
-
+    info.textContent = "Error:\n" + error.message;
   }
 }
 
-function loadGLB(url){
+function loadGLB(url) {
+  return new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
 
-  return new Promise(
-    (resolve,reject)=>{
+    loader.load(
+      url,
+      (gltf) => {
+        const obj = gltf.scene;
 
-      const loader =
-        new GLTFLoader();
+        obj.traverse((child) => {
+          if (child.isMesh) {
+            child.frustumCulled = false;
 
-      loader.load(
-
-        url,
-
-        (gltf)=>{
-
-          const obj =
-            gltf.scene;
-
-          obj.traverse(
-            (child)=>{
-
-              if(child.isMesh){
-
-                child.frustumCulled = false;
-
-                if(child.material){
-
-                  child.material.side =
-                    THREE.DoubleSide;
-
-                  child.material.flatShading =
-                    false;
-
-                  child.material.needsUpdate =
-                    true;
-                }
-
-                if(child.geometry){
-
-                  child.geometry.computeVertexNormals();
-
-                }
-              }
+            if (child.geometry) {
+              child.geometry.computeVertexNormals();
             }
-          );
 
-          resolve(obj);
+            if (child.material) {
+              const materials = Array.isArray(child.material)
+                ? child.material
+                : [child.material];
 
-        },
+              const clonedMaterials = materials.map((mat) => {
+                const cloned = mat.clone();
 
-        undefined,
+                cloned.side = THREE.DoubleSide;
+                cloned.flatShading = false;
 
-        reject
+                if (cloned.color) {
+                  cloned.color.set(
+                    document.getElementById("exteriorColor").value
+                  );
+                }
 
-      );
+                if ("shininess" in cloned) {
+                  cloned.shininess = parseFloat(
+                    document.getElementById("shineSlider").value
+                  );
+                }
 
-    }
-  );
+                cloned.needsUpdate = true;
+
+                if (cloned.color) {
+                  glbMaterials.push(cloned);
+                }
+
+                return cloned;
+              });
+
+              child.material = Array.isArray(child.material)
+                ? clonedMaterials
+                : clonedMaterials[0];
+            }
+          }
+        });
+
+        resolve(obj);
+      },
+      undefined,
+      reject
+    );
+  });
 }
 
-async function loadLegacy(
-  basePath,
-  manifestFile
-){
+async function loadLegacy(basePath, manifestFile) {
+  const manifest = await fetchJSON(basePath + manifestFile);
 
-  const manifest =
-    await fetchJSON(
-      basePath +
-      manifestFile
-    );
+  const group = new THREE.Group();
 
-  const group =
-    new THREE.Group();
+  const extGeoJson = await fetchJSON(
+    basePath + manifest.exterior.geometry
+  );
 
-  // ========= EXTERIOR =========
+  const extGeo = parseLegacyJSON(extGeoJson);
 
-  const extGeoJson =
-    await fetchJSON(
-      basePath +
-      manifest.exterior.geometry
-    );
+  exteriorMaterial = new THREE.MeshPhongMaterial({
+    color: document.getElementById("exteriorColor").value,
+    side: THREE.DoubleSide,
+    transparent: false,
+    opacity: 1,
+    shininess: parseFloat(document.getElementById("shineSlider").value),
+    flatShading: false
+  });
 
-  const extGeo =
-    parseLegacyJSON(
-      extGeoJson
-    );
-
-  exteriorMaterial =
-    new THREE.MeshPhongMaterial({
-
-      color:0x111111,
-
-      side:THREE.DoubleSide,
-
-      transparent:false,
-
-      opacity:1,
-
-      shininess:10,
-
-      flatShading:false
-
-    });
-
-  const extMesh =
-    new THREE.Mesh(
-      extGeo,
-      exteriorMaterial
-    );
-
+  const extMesh = new THREE.Mesh(extGeo, exteriorMaterial);
   group.add(extMesh);
 
-  // ========= INTERIOR =========
+  if (manifest.interior) {
+    const intGeoJson = await fetchJSON(
+      basePath + manifest.interior.geometry
+    );
 
-  if(manifest.interior){
+    const intGeo = parseLegacyJSON(intGeoJson);
 
-    const intGeoJson =
-      await fetchJSON(
-        basePath +
-        manifest.interior.geometry
-      );
+    interiorMaterial = new THREE.MeshPhongMaterial({
+      color: document.getElementById("interiorColor").value,
+      side: THREE.DoubleSide,
+      transparent: false,
+      opacity: 1,
+      shininess: 6,
+      flatShading: false
+    });
 
-    const intGeo =
-      parseLegacyJSON(
-        intGeoJson
-      );
-
-    interiorMaterial =
-      new THREE.MeshPhongMaterial({
-
-        color:0x777777,
-
-        side:THREE.DoubleSide,
-
-        transparent:false,
-
-        opacity:1,
-
-        shininess:6,
-
-        flatShading:false
-
-      });
-
-    const intMesh =
-      new THREE.Mesh(
-        intGeo,
-        interiorMaterial
-      );
-
+    const intMesh = new THREE.Mesh(intGeo, interiorMaterial);
     group.add(intMesh);
-
   }
 
-  group.rotation.x =
-    -Math.PI / 2;
+  group.rotation.x = -Math.PI / 2;
 
   return group;
 }
 
-async function fetchJSON(url){
+async function fetchJSON(url) {
+  const response = await fetch(url);
 
-  const response =
-    await fetch(url);
-
-  if(!response.ok){
-
-    throw new Error(
-      "No se pudo cargar:\n" +
-      url
-    );
+  if (!response.ok) {
+    throw new Error("No se pudo cargar:\n" + url);
   }
 
   return await response.json();
 }
 
-function parseLegacyJSON(json){
-
-  const verts =
-    json.vertices;
-
-  const uvLayer =
-    json.uvs &&
-    json.uvs[0]
-      ? json.uvs[0]
-      : [];
-
-  const faces =
-    json.faces;
+function parseLegacyJSON(json) {
+  const verts = json.vertices;
+  const uvLayer = json.uvs && json.uvs[0] ? json.uvs[0] : [];
+  const faces = json.faces;
 
   const positions = [];
   const uvs = [];
 
   let i = 0;
 
-  while(i < faces.length){
+  while (i < faces.length) {
+    const type = faces[i++];
 
-    const type =
-      faces[i++];
+    const isQuad = !!(type & 1);
+    const hasMaterial = !!(type & 2);
+    const hasFaceUv = !!(type & 4);
+    const hasFaceVertexUv = !!(type & 8);
+    const hasFaceNormal = !!(type & 16);
+    const hasFaceVertexNormal = !!(type & 32);
+    const hasFaceColor = !!(type & 64);
+    const hasFaceVertexColor = !!(type & 128);
 
-    const isQuad =
-      !!(type & 1);
-
-    const hasMaterial =
-      !!(type & 2);
-
-    const hasFaceUv =
-      !!(type & 4);
-
-    const hasFaceVertexUv =
-      !!(type & 8);
-
-    const hasFaceNormal =
-      !!(type & 16);
-
-    const hasFaceVertexNormal =
-      !!(type & 32);
-
-    const hasFaceColor =
-      !!(type & 64);
-
-    const hasFaceVertexColor =
-      !!(type & 128);
-
-    const nv =
-      isQuad ? 4 : 3;
-
+    const nv = isQuad ? 4 : 3;
     const vIdx = [];
 
-    for(let k=0;k<nv;k++){
-
-      vIdx.push(
-        faces[i++]
-      );
-
+    for (let k = 0; k < nv; k++) {
+      vIdx.push(faces[i++]);
     }
 
-    if(hasMaterial) i++;
-    if(hasFaceUv) i++;
+    if (hasMaterial) i++;
+    if (hasFaceUv) i++;
 
     let uvIdx = null;
 
-    if(hasFaceVertexUv){
-
+    if (hasFaceVertexUv) {
       uvIdx = [];
 
-      for(let k=0;k<nv;k++){
-
-        uvIdx.push(
-          faces[i++]
-        );
-
+      for (let k = 0; k < nv; k++) {
+        uvIdx.push(faces[i++]);
       }
     }
 
-    if(hasFaceNormal) i++;
+    if (hasFaceNormal) i++;
 
-    if(hasFaceVertexNormal){
-
+    if (hasFaceVertexNormal) {
       i += nv;
-
     }
 
-    if(hasFaceColor) i++;
+    if (hasFaceColor) i++;
 
-    if(hasFaceVertexColor){
-
+    if (hasFaceVertexColor) {
       i += nv;
-
     }
 
-    const triangles =
-      isQuad
-        ? [[0,1,2],[0,2,3]]
-        : [[0,1,2]];
+    const triangles = isQuad
+      ? [[0, 1, 2], [0, 2, 3]]
+      : [[0, 1, 2]];
 
-    for(const tri of triangles){
-
-      for(const k of tri){
-
-        const vi =
-          vIdx[k] * 3;
+    for (const tri of triangles) {
+      for (const k of tri) {
+        const vi = vIdx[k] * 3;
 
         positions.push(
           verts[vi],
-          verts[vi+1],
-          verts[vi+2]
+          verts[vi + 1],
+          verts[vi + 2]
         );
 
-        if(
-          uvIdx &&
-          uvLayer.length
-        ){
-
-          const ui =
-            uvIdx[k] * 2;
+        if (uvIdx && uvLayer.length) {
+          const ui = uvIdx[k] * 2;
 
           uvs.push(
             uvLayer[ui],
-            uvLayer[ui+1]
+            uvLayer[ui + 1]
           );
-
-        }else{
-
-          uvs.push(0,0);
-
+        } else {
+          uvs.push(0, 0);
         }
       }
     }
   }
 
-  const geometry =
-    new THREE.BufferGeometry();
+  const geometry = new THREE.BufferGeometry();
 
   geometry.setAttribute(
     "position",
-    new THREE.Float32BufferAttribute(
-      positions,
-      3
-    )
+    new THREE.Float32BufferAttribute(positions, 3)
   );
 
   geometry.setAttribute(
     "uv",
-    new THREE.Float32BufferAttribute(
-      uvs,
-      2
-    )
+    new THREE.Float32BufferAttribute(uvs, 2)
   );
 
   geometry.computeVertexNormals();
-
-  smoothNormalsByPosition(
-    geometry
-  );
+  smoothNormalsByPosition(geometry);
 
   geometry.computeBoundingBox();
-
   geometry.computeBoundingSphere();
 
   return geometry;
 }
 
-function smoothNormalsByPosition(
-  geometry
-){
-
-  const pos =
-    geometry.attributes.position.array;
-
-  const normal =
-    geometry.attributes.normal.array;
-
-  const count =
-    pos.length / 3;
+function smoothNormalsByPosition(geometry) {
+  const pos = geometry.attributes.position.array;
+  const normal = geometry.attributes.normal.array;
+  const count = pos.length / 3;
 
   const precision = 10000;
+  const groups = new Map();
 
-  const groups =
-    new Map();
+  for (let i = 0; i < count; i++) {
+    const x = Math.round(pos[i * 3] * precision);
+    const y = Math.round(pos[i * 3 + 1] * precision);
+    const z = Math.round(pos[i * 3 + 2] * precision);
 
-  for(let i=0;i<count;i++){
+    const key = x + "_" + y + "_" + z;
 
-    const x =
-      Math.round(
-        pos[i*3] *
-        precision
-      );
-
-    const y =
-      Math.round(
-        pos[i*3+1] *
-        precision
-      );
-
-    const z =
-      Math.round(
-        pos[i*3+2] *
-        precision
-      );
-
-    const key =
-      x + "_" + y + "_" + z;
-
-    if(!groups.has(key)){
-
-      groups.set(key,[]);
-
+    if (!groups.has(key)) {
+      groups.set(key, []);
     }
 
     groups.get(key).push(i);
-
   }
 
-  for(const indexes of groups.values()){
-
-    if(indexes.length < 2)
-      continue;
+  for (const indexes of groups.values()) {
+    if (indexes.length < 2) continue;
 
     let nx = 0;
     let ny = 0;
     let nz = 0;
 
-    for(const i of indexes){
-
-      nx += normal[i*3];
-      ny += normal[i*3+1];
-      nz += normal[i*3+2];
-
+    for (const i of indexes) {
+      nx += normal[i * 3];
+      ny += normal[i * 3 + 1];
+      nz += normal[i * 3 + 2];
     }
 
-    const len =
-      Math.sqrt(
-        nx*nx +
-        ny*ny +
-        nz*nz
-      ) || 1;
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
 
     nx /= len;
     ny /= len;
     nz /= len;
 
-    for(const i of indexes){
-
-      normal[i*3] = nx;
-      normal[i*3+1] = ny;
-      normal[i*3+2] = nz;
-
+    for (const i of indexes) {
+      normal[i * 3] = nx;
+      normal[i * 3 + 1] = ny;
+      normal[i * 3 + 2] = nz;
     }
   }
 
-  geometry.attributes.normal.needsUpdate =
-    true;
+  geometry.attributes.normal.needsUpdate = true;
 }
 
-function fitToView(object){
-
+function fitToView(object) {
   object.updateMatrixWorld(true);
 
-  const box =
-    new THREE.Box3()
-      .setFromObject(object);
-
-  const size =
-    box.getSize(
-      new THREE.Vector3()
-    );
-
-  const center =
-    box.getCenter(
-      new THREE.Vector3()
-    );
+  const box = new THREE.Box3().setFromObject(object);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
 
   object.position.x -= center.x;
   object.position.y -= center.y;
   object.position.z -= center.z;
 
-  const maxSize =
-    Math.max(
-      size.x,
-      size.y,
-      size.z
-    );
+  const maxSize = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * Math.PI / 180;
 
-  const fov =
-    camera.fov *
-    Math.PI / 180;
-
-  let distance =
-    Math.abs(
-      maxSize / 2 /
-      Math.tan(fov / 2)
-    );
-
+  let distance = Math.abs(maxSize / 2 / Math.tan(fov / 2));
   distance *= 1.4;
 
-  camera.position.set(
-    0,
-    0,
-    distance
-  );
-
-  camera.near =
-    distance / 100;
-
-  camera.far =
-    distance * 100;
-
+  camera.position.set(0, 0, distance);
+  camera.near = distance / 100;
+  camera.far = distance * 100;
   camera.updateProjectionMatrix();
 
-  controls.target.set(
-    0,
-    0,
-    0
-  );
-
+  controls.target.set(0, 0, 0);
   controls.update();
 
-  initialCameraPosition.copy(
-    camera.position
-  );
-
-  initialTarget.copy(
-    controls.target
-  );
+  initialCameraPosition.copy(camera.position);
+  initialTarget.copy(controls.target);
 }
 
-function disposeObject(object){
-
-  object.traverse(
-    (child)=>{
-
-      if(child.geometry){
-
-        child.geometry.dispose();
-
-      }
-
-      if(child.material){
-
-        const mats =
-          Array.isArray(
-            child.material
-          )
-            ? child.material
-            : [child.material];
-
-        mats.forEach(
-          (mat)=>{
-
-            for(const key in mat){
-
-              const value =
-                mat[key];
-
-              if(
-                value &&
-                value.isTexture
-              ){
-
-                value.dispose();
-
-              }
-            }
-
-            mat.dispose();
-
-          }
-        );
-      }
+function disposeObject(object) {
+  object.traverse((child) => {
+    if (child.geometry) {
+      child.geometry.dispose();
     }
-  );
+
+    if (child.material) {
+      const mats = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
+
+      mats.forEach((mat) => {
+        for (const key in mat) {
+          const value = mat[key];
+
+          if (value && value.isTexture) {
+            value.dispose();
+          }
+        }
+
+        mat.dispose();
+      });
+    }
+  });
 }
 
-function onResize(){
-
-  camera.aspect =
-    window.innerWidth /
-    window.innerHeight;
-
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-  );
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function animate(){
-
-  requestAnimationFrame(
-    animate
-  );
+function animate() {
+  requestAnimationFrame(animate);
 
   controls.update();
-
-  renderer.render(
-    scene,
-    camera
-  );
+  renderer.render(scene, camera);
 }
-
 </script>
 
 </body>
