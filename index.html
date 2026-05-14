@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,56 +15,58 @@
   </script>
 
   <style>
-    body{
-      margin:0;
-      overflow:hidden;
-      background:#e5e5e5;
-      font-family:Arial,sans-serif;
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #e5e5e5;
+      font-family: Arial, sans-serif;
     }
 
-    canvas{
-      display:block;
+    canvas {
+      display: block;
     }
 
-    .panel{
-      position:absolute;
-      top:12px;
-      left:12px;
-      width:300px;
-      background:white;
-      padding:14px;
-      border-radius:8px;
-      box-shadow:0 4px 20px rgba(0,0,0,.18);
-      z-index:10;
+    .panel {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 300px;
+      background: white;
+      padding: 14px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.18);
+      z-index: 10;
     }
 
-    label{
-      display:block;
-      font-size:13px;
-      font-weight:bold;
-      margin-bottom:8px;
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 8px;
     }
 
-    select,button{
-      width:100%;
-      padding:10px;
-      margin-bottom:10px;
-      border-radius:6px;
-      border:1px solid #ccc;
+    select,
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
 
-    button{
-      background:#222;
-      color:white;
-      border:none;
-      cursor:pointer;
+    button {
+      background: #222;
+      color: white;
+      border: none;
+      cursor: pointer;
     }
 
-    #info{
-      font-size:12px;
-      line-height:1.4;
-      color:#333;
-      word-break:break-word;
+    #info {
+      font-size: 12px;
+      line-height: 1.4;
+      color: #333;
+      word-break: break-word;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -73,7 +74,6 @@
 <body>
 
 <div class="panel">
-
   <label>Modelo</label>
 
   <select id="modelSelect">
@@ -84,17 +84,14 @@
   <button id="resetBtn">Reset vista</button>
 
   <div id="info">Cargando...</div>
-
 </div>
 
 <script type="module">
-
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MODELOS = {
-
   glb: {
     tipo: "glb",
     nombre: "Modelo GLB",
@@ -107,7 +104,6 @@ const MODELOS = {
     basePath: "./modelos/1457/",
     manifest: "manifest.json"
   }
-
 };
 
 let scene;
@@ -126,13 +122,12 @@ loadSelectedModel();
 modelSelect.addEventListener("change", loadSelectedModel);
 
 resetBtn.addEventListener("click", () => {
-  if(currentModel){
+  if (currentModel) {
     fitToView(currentModel);
   }
 });
 
-function init(){
-
+function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xe5e5e5);
 
@@ -144,11 +139,11 @@ function init(){
   );
 
   renderer = new THREE.WebGLRenderer({
-    antialias:true
+    antialias: true
   });
 
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   document.body.appendChild(renderer.domElement);
@@ -157,19 +152,19 @@ function init(){
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
 
-  const ambient = new THREE.AmbientLight(0xffffff,1.8);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.8);
   scene.add(ambient);
 
-  const light1 = new THREE.DirectionalLight(0xffffff,2.2);
-  light1.position.set(4,5,5);
+  const light1 = new THREE.DirectionalLight(0xffffff, 2.2);
+  light1.position.set(4, 5, 5);
   scene.add(light1);
 
-  const light2 = new THREE.DirectionalLight(0xffffff,1.2);
-  light2.position.set(-4,3,-3);
+  const light2 = new THREE.DirectionalLight(0xffffff, 1.2);
+  light2.position.set(-4, 3, -3);
   scene.add(light2);
 
-  const light3 = new THREE.DirectionalLight(0xffffff,0.8);
-  light3.position.set(0,4,-5);
+  const light3 = new THREE.DirectionalLight(0xffffff, 0.8);
+  light3.position.set(0, 4, -5);
   scene.add(light3);
 
   window.addEventListener("resize", onResize);
@@ -177,189 +172,145 @@ function init(){
   animate();
 }
 
-async function loadSelectedModel(){
-
+async function loadSelectedModel() {
   const key = modelSelect.value;
   const item = MODELOS[key];
 
   info.textContent = "Cargando " + item.nombre + "...";
 
-  if(currentModel){
+  if (currentModel) {
     scene.remove(currentModel);
     disposeObject(currentModel);
     currentModel = null;
   }
 
-  try{
-
+  try {
     let loaded;
 
-    if(item.tipo === "glb"){
+    if (item.tipo === "glb") {
       loaded = await loadGLB(item.url);
-    }else{
-      loaded = await loadLegacy(item.basePath,item.manifest);
+    } else {
+      loaded = await loadLegacy(item.basePath, item.manifest);
     }
 
     currentModel = loaded;
-
     scene.add(currentModel);
 
     fitToView(currentModel);
 
-    info.textContent = "Modelo cargado correctamente";
-
-  }catch(error){
-
+    info.textContent = "Modelo cargado correctamente:\n" + item.nombre;
+  } catch (error) {
     console.error(error);
-
-    info.textContent =
-      "Error:\n" + error.message;
+    info.textContent = "Error:\n" + error.message;
   }
 }
 
-function loadGLB(url){
-
-  return new Promise((resolve,reject)=>{
-
+function loadGLB(url) {
+  return new Promise((resolve, reject) => {
     const loader = new GLTFLoader();
 
     loader.load(
-
       url,
-
-      (gltf)=>{
-
+      (gltf) => {
         const obj = gltf.scene;
 
-        obj.traverse((child)=>{
-
-          if(child.isMesh){
-
+        obj.traverse((child) => {
+          if (child.isMesh) {
             child.frustumCulled = false;
 
-            if(child.material){
-
+            if (child.material) {
               child.material.side = THREE.DoubleSide;
+              child.material.flatShading = false;
               child.material.needsUpdate = true;
+            }
 
+            if (child.geometry) {
+              child.geometry.computeVertexNormals();
             }
           }
         });
 
         resolve(obj);
-
       },
-
       undefined,
-
       reject
-
     );
-
   });
-
 }
 
-async function loadLegacy(basePath,manifestFile){
-
+async function loadLegacy(basePath, manifestFile) {
   const manifest = await fetchJSON(basePath + manifestFile);
 
   const group = new THREE.Group();
 
-  if(!manifest.exterior){
+  if (!manifest.exterior) {
     throw new Error("Manifest sin exterior");
   }
 
-  // ========= EXTERIOR =========
-
-  const extGeoJson = await fetchJSON(
-    basePath + manifest.exterior.geometry
-  );
-
+  const extGeoJson = await fetchJSON(basePath + manifest.exterior.geometry);
   const extGeo = parseLegacyJSON(extGeoJson);
 
   const extMat = new THREE.MeshPhongMaterial({
-
-    color:0xffffff,
-    side:THREE.DoubleSide,
-    transparent:false,
-    opacity:1,
-    shininess:10
-
+    color: 0xffffff,
+    side: THREE.DoubleSide,
+    transparent: false,
+    opacity: 1,
+    shininess: 10,
+    flatShading: false
   });
 
-  const extMesh = new THREE.Mesh(extGeo,extMat);
-
+  const extMesh = new THREE.Mesh(extGeo, extMat);
   extMesh.name = "EXTERIOR";
-
   group.add(extMesh);
 
-  // ========= INTERIOR =========
-
-  if(manifest.interior){
-
-    const intGeoJson = await fetchJSON(
-      basePath + manifest.interior.geometry
-    );
-
+  if (manifest.interior) {
+    const intGeoJson = await fetchJSON(basePath + manifest.interior.geometry);
     const intGeo = parseLegacyJSON(intGeoJson);
 
     const intMat = new THREE.MeshPhongMaterial({
-
-      color:0x777777,
-      side:THREE.DoubleSide,
-      transparent:false,
-      opacity:1,
-      shininess:8
-
+      color: 0x777777,
+      side: THREE.DoubleSide,
+      transparent: false,
+      opacity: 1,
+      shininess: 8,
+      flatShading: false
     });
 
-    const intMesh = new THREE.Mesh(intGeo,intMat);
-
+    const intMesh = new THREE.Mesh(intGeo, intMat);
     intMesh.name = "INTERIOR";
-
     group.add(intMesh);
-
   }
-
-  // ROTACIÓN MODELOS LEGACY
 
   group.rotation.x = -Math.PI / 2;
 
   return group;
 }
 
-async function fetchJSON(url){
-
+async function fetchJSON(url) {
   const response = await fetch(url);
 
-  if(!response.ok){
-    throw new Error(
-      "No se pudo cargar:\n" + url
-    );
+  if (!response.ok) {
+    throw new Error("No se pudo cargar:\n" + url + "\nHTTP " + response.status);
   }
 
   return await response.json();
 }
 
-function parseLegacyJSON(json){
-
+function parseLegacyJSON(json) {
   const verts = json.vertices;
-  const uvLayer =
-    json.uvs && json.uvs[0]
-      ? json.uvs[0]
-      : [];
-
+  const uvLayer = json.uvs && json.uvs[0] ? json.uvs[0] : [];
   const faces = json.faces;
+
+  if (!verts || !faces) {
+    throw new Error("El archivo legacy no contiene vertices/faces.");
+  }
 
   const positions = [];
   const uvs = [];
-  const normals = [];
 
   let i = 0;
 
-  while(i < faces.length){
-
+  while (i < faces.length) {
     const type = faces[i++];
 
     const isQuad = !!(type & 1);
@@ -372,83 +323,57 @@ function parseLegacyJSON(json){
     const hasFaceVertexColor = !!(type & 128);
 
     const nv = isQuad ? 4 : 3;
-
     const vIdx = [];
 
-    for(let k=0;k<nv;k++){
+    for (let k = 0; k < nv; k++) {
       vIdx.push(faces[i++]);
     }
 
-    if(hasMaterial) i++;
-    if(hasFaceUv) i++;
+    if (hasMaterial) i++;
+    if (hasFaceUv) i++;
 
     let uvIdx = null;
 
-    if(hasFaceVertexUv){
-
+    if (hasFaceVertexUv) {
       uvIdx = [];
 
-      for(let k=0;k<nv;k++){
+      for (let k = 0; k < nv; k++) {
         uvIdx.push(faces[i++]);
       }
     }
 
-    if(hasFaceNormal) i++;
+    if (hasFaceNormal) i++;
 
-    let nIdx = null;
-
-    if(hasFaceVertexNormal){
-
-      nIdx = [];
-
-      for(let k=0;k<nv;k++){
-        nIdx.push(faces[i++]);
-      }
+    if (hasFaceVertexNormal) {
+      i += nv;
     }
 
-    if(hasFaceColor) i++;
-    if(hasFaceVertexColor) i += nv;
+    if (hasFaceColor) i++;
+    if (hasFaceVertexColor) i += nv;
 
     const triangles = isQuad
-      ? [[0,1,2],[0,2,3]]
-      : [[0,1,2]];
+      ? [[0, 1, 2], [0, 2, 3]]
+      : [[0, 1, 2]];
 
-    for(const tri of triangles){
-
-      for(const k of tri){
-
+    for (const tri of triangles) {
+      for (const k of tri) {
         const vi = vIdx[k] * 3;
 
         positions.push(
           verts[vi],
-          verts[vi+1],
-          verts[vi+2]
+          verts[vi + 1],
+          verts[vi + 2]
         );
 
-        if(uvIdx && uvLayer.length){
-
+        if (uvIdx && uvLayer.length) {
           const ui = uvIdx[k] * 2;
 
           uvs.push(
             uvLayer[ui],
-            uvLayer[ui+1]
+            uvLayer[ui + 1]
           );
-
-        }else{
-
-          uvs.push(0,0);
-
-        }
-
-        if(nIdx && json.normals){
-
-          const ni = nIdx[k] * 3;
-
-          normals.push(
-            json.normals[ni],
-            json.normals[ni+1],
-            json.normals[ni+2]
-          );
+        } else {
+          uvs.push(0, 0);
         }
       }
     }
@@ -458,35 +383,16 @@ function parseLegacyJSON(json){
 
   geometry.setAttribute(
     "position",
-    new THREE.Float32BufferAttribute(
-      positions,
-      3
-    )
+    new THREE.Float32BufferAttribute(positions, 3)
   );
 
   geometry.setAttribute(
     "uv",
-    new THREE.Float32BufferAttribute(
-      uvs,
-      2
-    )
+    new THREE.Float32BufferAttribute(uvs, 2)
   );
 
-  if(normals.length === positions.length){
-
-    geometry.setAttribute(
-      "normal",
-      new THREE.Float32BufferAttribute(
-        normals,
-        3
-      )
-    );
-
-  }else{
-
-    geometry.computeVertexNormals();
-
-  }
+  geometry.computeVertexNormals();
+  smoothNormalsByPosition(geometry);
 
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
@@ -494,102 +400,123 @@ function parseLegacyJSON(json){
   return geometry;
 }
 
-function fitToView(object){
+function smoothNormalsByPosition(geometry) {
+  const pos = geometry.attributes.position.array;
+  const normal = geometry.attributes.normal.array;
+  const count = pos.length / 3;
 
+  const precision = 10000;
+  const groups = new Map();
+
+  for (let i = 0; i < count; i++) {
+    const x = Math.round(pos[i * 3] * precision);
+    const y = Math.round(pos[i * 3 + 1] * precision);
+    const z = Math.round(pos[i * 3 + 2] * precision);
+
+    const key = x + "_" + y + "_" + z;
+
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+
+    groups.get(key).push(i);
+  }
+
+  for (const indexes of groups.values()) {
+    if (indexes.length < 2) continue;
+
+    let nx = 0;
+    let ny = 0;
+    let nz = 0;
+
+    for (const i of indexes) {
+      nx += normal[i * 3];
+      ny += normal[i * 3 + 1];
+      nz += normal[i * 3 + 2];
+    }
+
+    const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+
+    nx /= len;
+    ny /= len;
+    nz /= len;
+
+    for (const i of indexes) {
+      normal[i * 3] = nx;
+      normal[i * 3 + 1] = ny;
+      normal[i * 3 + 2] = nz;
+    }
+  }
+
+  geometry.attributes.normal.needsUpdate = true;
+}
+
+function fitToView(object) {
   object.updateMatrixWorld(true);
 
   const box = new THREE.Box3().setFromObject(object);
-
-  const size =
-    box.getSize(new THREE.Vector3());
-
-  const center =
-    box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
 
   object.position.x -= center.x;
   object.position.y -= center.y;
   object.position.z -= center.z;
 
-  const maxSize =
-    Math.max(size.x,size.y,size.z);
+  const maxSize = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * Math.PI / 180;
 
-  const fov =
-    camera.fov * Math.PI / 180;
-
-  let distance =
-    Math.abs(maxSize / 2 / Math.tan(fov / 2));
-
+  let distance = Math.abs(maxSize / 2 / Math.tan(fov / 2));
   distance *= 1.4;
 
-  camera.position.set(0,0,distance);
-
+  camera.position.set(0, 0, distance);
   camera.near = distance / 100;
   camera.far = distance * 100;
-
   camera.updateProjectionMatrix();
 
-  controls.target.set(0,0,0);
-
+  controls.target.set(0, 0, 0);
   controls.update();
 }
 
-function disposeObject(object){
-
-  object.traverse((child)=>{
-
-    if(child.geometry){
+function disposeObject(object) {
+  object.traverse((child) => {
+    if (child.geometry) {
       child.geometry.dispose();
     }
 
-    if(child.material){
+    if (child.material) {
+      const materials = Array.isArray(child.material)
+        ? child.material
+        : [child.material];
 
-      const materials =
-        Array.isArray(child.material)
-          ? child.material
-          : [child.material];
-
-      materials.forEach((mat)=>{
-
-        for(const key in mat){
-
+      materials.forEach((mat) => {
+        for (const key in mat) {
           const value = mat[key];
 
-          if(value && value.isTexture){
+          if (value && value.isTexture) {
             value.dispose();
           }
         }
 
         mat.dispose();
-
       });
     }
   });
 }
 
-function onResize(){
-
-  camera.aspect =
-    window.innerWidth / window.innerHeight;
-
+function onResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(
-    window.innerWidth,
-    window.innerHeight
-  );
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function animate(){
-
+function animate() {
   requestAnimationFrame(animate);
 
   controls.update();
-
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
-
 </script>
 
 </body>
 </html>
-```
