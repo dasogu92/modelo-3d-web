@@ -18,7 +18,7 @@
     body{
       margin:0;
       overflow:hidden;
-      background:#dcdcdc;
+      background:#e5e5e5;
       font-family:Arial,sans-serif;
     }
 
@@ -30,26 +30,34 @@
       position:absolute;
       top:12px;
       left:12px;
-      width:300px;
+      width:320px;
       background:white;
       padding:14px;
       border-radius:8px;
       box-shadow:0 4px 20px rgba(0,0,0,.18);
       z-index:10;
+      max-height:calc(100vh - 24px);
+      overflow:auto;
     }
 
     label{
       display:block;
-      font-size:13px;
+      font-size:12px;
       font-weight:bold;
+      margin:10px 0 5px;
+    }
+
+    select,
+    button,
+    input[type="range"],
+    input[type="color"]{
+      width:100%;
       margin-bottom:8px;
     }
 
     select,
     button{
-      width:100%;
-      padding:10px;
-      margin-bottom:10px;
+      padding:9px;
       border-radius:6px;
       border:1px solid #ccc;
     }
@@ -61,11 +69,19 @@
       cursor:pointer;
     }
 
+    .row{
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+      color:#333;
+    }
+
     #info{
       font-size:12px;
       line-height:1.4;
       color:#333;
       white-space:pre-line;
+      margin-top:8px;
     }
   </style>
 </head>
@@ -83,15 +99,113 @@
 
   <button id="resetBtn">Reset vista</button>
 
-  <div id="info">Cargando...</div>
+  <label>Luz ambiente</label>
+  <div class="row">
+    <span>Intensidad</span>
+    <span id="ambientVal">1.80</span>
+  </div>
+
+  <input
+    type="range"
+    id="ambientSlider"
+    min="0"
+    max="4"
+    step="0.05"
+    value="1.8"
+  >
+
+  <label>Luz frontal</label>
+  <div class="row">
+    <span>Intensidad</span>
+    <span id="frontVal">2.20</span>
+  </div>
+
+  <input
+    type="range"
+    id="frontSlider"
+    min="0"
+    max="6"
+    step="0.05"
+    value="2.2"
+  >
+
+  <label>Luz lateral</label>
+  <div class="row">
+    <span>Intensidad</span>
+    <span id="sideVal">1.20</span>
+  </div>
+
+  <input
+    type="range"
+    id="sideSlider"
+    min="0"
+    max="6"
+    step="0.05"
+    value="1.2"
+  >
+
+  <label>Contraluz</label>
+  <div class="row">
+    <span>Intensidad</span>
+    <span id="backVal">0.80</span>
+  </div>
+
+  <input
+    type="range"
+    id="backSlider"
+    min="0"
+    max="6"
+    step="0.05"
+    value="0.8"
+  >
+
+  <label>Brillo material</label>
+
+  <div class="row">
+    <span>Shininess</span>
+    <span id="shineVal">10</span>
+  </div>
+
+  <input
+    type="range"
+    id="shineSlider"
+    min="0"
+    max="80"
+    step="1"
+    value="10"
+  >
+
+  <label>Color exterior</label>
+
+  <input
+    type="color"
+    id="exteriorColor"
+    value="#050505"
+  >
+
+  <label>Color interior</label>
+
+  <input
+    type="color"
+    id="interiorColor"
+    value="#777777"
+  >
+
+  <div id="info">
+    Cargando...
+  </div>
 
 </div>
 
 <script type="module">
 
 import * as THREE from "three";
-import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+import { OrbitControls }
+from "three/addons/controls/OrbitControls.js";
+
+import { GLTFLoader }
+from "three/addons/loaders/GLTFLoader.js";
 
 const MODELOS = {
 
@@ -114,133 +228,365 @@ let scene;
 let camera;
 let renderer;
 let controls;
+
 let currentModel = null;
 
-const info = document.getElementById("info");
-const modelSelect = document.getElementById("modelSelect");
-const resetBtn = document.getElementById("resetBtn");
+let initialCameraPosition =
+  new THREE.Vector3();
+
+let initialTarget =
+  new THREE.Vector3();
+
+let ambientLight;
+let frontLight;
+let sideLight;
+let backLight;
+
+let exteriorMaterial = null;
+let interiorMaterial = null;
+
+const info =
+  document.getElementById("info");
+
+const modelSelect =
+  document.getElementById("modelSelect");
+
+const resetBtn =
+  document.getElementById("resetBtn");
 
 init();
+wireUI();
 loadSelectedModel();
 
-modelSelect.addEventListener("change",loadSelectedModel);
+modelSelect.addEventListener(
+  "change",
+  loadSelectedModel
+);
 
-resetBtn.addEventListener("click",()=>{
-
-  if(currentModel){
-    fitToView(currentModel);
+resetBtn.addEventListener(
+  "click",
+  ()=>{
+    if(currentModel){
+      fitToView(currentModel);
+    }
   }
+);
 
-});
+window.addEventListener(
+  "dblclick",
+  ()=>{
+
+    camera.position.copy(
+      initialCameraPosition
+    );
+
+    controls.target.copy(
+      initialTarget
+    );
+
+    controls.update();
+
+  }
+);
 
 function init(){
 
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xdcdcdc);
 
-  camera = new THREE.PerspectiveCamera(
-    35,
-    window.innerWidth / window.innerHeight,
-    0.01,
-    10000
+  scene.background =
+    new THREE.Color(0xe5e5e5);
+
+  camera =
+    new THREE.PerspectiveCamera(
+      35,
+      window.innerWidth /
+      window.innerHeight,
+      0.01,
+      10000
+    );
+
+  renderer =
+    new THREE.WebGLRenderer({
+      antialias:true
+    });
+
+  renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
   );
 
-  renderer = new THREE.WebGLRenderer({
-    antialias:true
-  });
-
-  renderer.setSize(window.innerWidth,window.innerHeight);
-
   renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio,2)
+    Math.min(
+      window.devicePixelRatio,
+      2
+    )
   );
 
   renderer.outputColorSpace =
     THREE.SRGBColorSpace;
 
-  renderer.toneMapping =
-    THREE.ACESFilmicToneMapping;
-
-  renderer.toneMappingExposure = 1.35;
-
-  document.body.appendChild(renderer.domElement);
-
-  controls = new OrbitControls(
-    camera,
+  document.body.appendChild(
     renderer.domElement
   );
+
+  controls =
+    new OrbitControls(
+      camera,
+      renderer.domElement
+    );
 
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
 
   // ========= LUCES =========
 
-  const ambient =
-    new THREE.AmbientLight(0xffffff,0.55);
-
-  scene.add(ambient);
-
-  const hemi =
-    new THREE.HemisphereLight(
+  ambientLight =
+    new THREE.AmbientLight(
       0xffffff,
-      0x333344,
+      1.8
+    );
+
+  scene.add(ambientLight);
+
+  frontLight =
+    new THREE.DirectionalLight(
+      0xffffff,
+      2.2
+    );
+
+  frontLight.position.set(
+    4,
+    5,
+    5
+  );
+
+  scene.add(frontLight);
+
+  sideLight =
+    new THREE.DirectionalLight(
+      0xffffff,
       1.2
     );
 
-  scene.add(hemi);
+  sideLight.position.set(
+    -4,
+    3,
+    -3
+  );
 
-  const keyLight =
+  scene.add(sideLight);
+
+  backLight =
     new THREE.DirectionalLight(
       0xffffff,
-      3.5
+      0.8
     );
 
-  keyLight.position.set(4,6,6);
+  backLight.position.set(
+    0,
+    4,
+    -5
+  );
 
-  scene.add(keyLight);
+  scene.add(backLight);
 
-  const fillLight =
-    new THREE.DirectionalLight(
-      0xffffff,
-      1.2
-    );
-
-  fillLight.position.set(-5,3,4);
-
-  scene.add(fillLight);
-
-  const rimLight =
-    new THREE.DirectionalLight(
-      0xffffff,
-      4.0
-    );
-
-  rimLight.position.set(0,4,-6);
-
-  scene.add(rimLight);
-
-  const topLight =
-    new THREE.DirectionalLight(
-      0xffffff,
-      2.0
-    );
-
-  topLight.position.set(0,8,1);
-
-  scene.add(topLight);
-
-  window.addEventListener("resize",onResize);
+  window.addEventListener(
+    "resize",
+    onResize
+  );
 
   animate();
 }
 
+function wireUI(){
+
+  const ambientSlider =
+    document.getElementById(
+      "ambientSlider"
+    );
+
+  const frontSlider =
+    document.getElementById(
+      "frontSlider"
+    );
+
+  const sideSlider =
+    document.getElementById(
+      "sideSlider"
+    );
+
+  const backSlider =
+    document.getElementById(
+      "backSlider"
+    );
+
+  const shineSlider =
+    document.getElementById(
+      "shineSlider"
+    );
+
+  const exteriorColor =
+    document.getElementById(
+      "exteriorColor"
+    );
+
+  const interiorColor =
+    document.getElementById(
+      "interiorColor"
+    );
+
+  ambientSlider.addEventListener(
+    "input",
+    ()=>{
+
+      const v =
+        parseFloat(
+          ambientSlider.value
+        );
+
+      ambientLight.intensity = v;
+
+      document.getElementById(
+        "ambientVal"
+      ).textContent =
+        v.toFixed(2);
+
+    }
+  );
+
+  frontSlider.addEventListener(
+    "input",
+    ()=>{
+
+      const v =
+        parseFloat(
+          frontSlider.value
+        );
+
+      frontLight.intensity = v;
+
+      document.getElementById(
+        "frontVal"
+      ).textContent =
+        v.toFixed(2);
+
+    }
+  );
+
+  sideSlider.addEventListener(
+    "input",
+    ()=>{
+
+      const v =
+        parseFloat(
+          sideSlider.value
+        );
+
+      sideLight.intensity = v;
+
+      document.getElementById(
+        "sideVal"
+      ).textContent =
+        v.toFixed(2);
+
+    }
+  );
+
+  backSlider.addEventListener(
+    "input",
+    ()=>{
+
+      const v =
+        parseFloat(
+          backSlider.value
+        );
+
+      backLight.intensity = v;
+
+      document.getElementById(
+        "backVal"
+      ).textContent =
+        v.toFixed(2);
+
+    }
+  );
+
+  shineSlider.addEventListener(
+    "input",
+    ()=>{
+
+      const v =
+        parseFloat(
+          shineSlider.value
+        );
+
+      document.getElementById(
+        "shineVal"
+      ).textContent =
+        v.toFixed(0);
+
+      if(exteriorMaterial){
+
+        exteriorMaterial.shininess = v;
+        exteriorMaterial.needsUpdate = true;
+
+      }
+
+      if(interiorMaterial){
+
+        interiorMaterial.shininess = v;
+        interiorMaterial.needsUpdate = true;
+
+      }
+
+    }
+  );
+
+  exteriorColor.addEventListener(
+    "input",
+    ()=>{
+
+      if(exteriorMaterial){
+
+        exteriorMaterial.color.set(
+          exteriorColor.value
+        );
+
+        exteriorMaterial.needsUpdate = true;
+      }
+
+    }
+  );
+
+  interiorColor.addEventListener(
+    "input",
+    ()=>{
+
+      if(interiorMaterial){
+
+        interiorMaterial.color.set(
+          interiorColor.value
+        );
+
+        interiorMaterial.needsUpdate = true;
+      }
+
+    }
+  );
+}
+
 async function loadSelectedModel(){
 
-  const key = modelSelect.value;
-  const item = MODELOS[key];
+  const key =
+    modelSelect.value;
+
+  const item =
+    MODELOS[key];
 
   info.textContent =
-    "Cargando " + item.nombre + "...";
+    "Cargando " +
+    item.nombre +
+    "...";
 
   if(currentModel){
 
@@ -257,14 +603,16 @@ async function loadSelectedModel(){
 
     if(item.tipo === "glb"){
 
-      loaded = await loadGLB(item.url);
+      loaded =
+        await loadGLB(item.url);
 
     }else{
 
-      loaded = await loadLegacy(
-        item.basePath,
-        item.manifest
-      );
+      loaded =
+        await loadLegacy(
+          item.basePath,
+          item.manifest
+        );
 
     }
 
@@ -282,98 +630,120 @@ async function loadSelectedModel(){
     console.error(error);
 
     info.textContent =
-      "Error:\n" + error.message;
+      "Error:\n" +
+      error.message;
+
   }
 }
 
 function loadGLB(url){
 
-  return new Promise((resolve,reject)=>{
+  return new Promise(
+    (resolve,reject)=>{
 
-    const loader = new GLTFLoader();
+      const loader =
+        new GLTFLoader();
 
-    loader.load(
+      loader.load(
 
-      url,
+        url,
 
-      (gltf)=>{
+        (gltf)=>{
 
-        const obj = gltf.scene;
+          const obj =
+            gltf.scene;
 
-        obj.traverse((child)=>{
+          obj.traverse(
+            (child)=>{
 
-          if(child.isMesh){
+              if(child.isMesh){
 
-            child.frustumCulled = false;
+                child.frustumCulled = false;
 
-            if(child.material){
+                if(child.material){
 
-              child.material.side =
-                THREE.DoubleSide;
+                  child.material.side =
+                    THREE.DoubleSide;
 
-              child.material.flatShading =
-                false;
+                  child.material.flatShading =
+                    false;
 
-              child.material.needsUpdate =
-                true;
+                  child.material.needsUpdate =
+                    true;
+                }
+
+                if(child.geometry){
+
+                  child.geometry.computeVertexNormals();
+
+                }
+              }
             }
+          );
 
-            if(child.geometry){
+          resolve(obj);
 
-              child.geometry.computeVertexNormals();
+        },
 
-            }
-          }
-        });
+        undefined,
 
-        resolve(obj);
+        reject
 
-      },
+      );
 
-      undefined,
-
-      reject
-
-    );
-
-  });
-
+    }
+  );
 }
 
-async function loadLegacy(basePath,manifestFile){
+async function loadLegacy(
+  basePath,
+  manifestFile
+){
 
   const manifest =
-    await fetchJSON(basePath + manifestFile);
+    await fetchJSON(
+      basePath +
+      manifestFile
+    );
 
-  const group = new THREE.Group();
+  const group =
+    new THREE.Group();
 
   // ========= EXTERIOR =========
 
   const extGeoJson =
     await fetchJSON(
-      basePath + manifest.exterior.geometry
+      basePath +
+      manifest.exterior.geometry
     );
 
   const extGeo =
-    parseLegacyJSON(extGeoJson);
+    parseLegacyJSON(
+      extGeoJson
+    );
 
-  const extMat =
-    new THREE.MeshStandardMaterial({
+  exteriorMaterial =
+    new THREE.MeshPhongMaterial({
 
       color:0x111111,
 
-      roughness:0.42,
-
-      metalness:0.0,
-
       side:THREE.DoubleSide,
+
+      transparent:false,
+
+      opacity:1,
+
+      shininess:10,
 
       flatShading:false
 
     });
 
   const extMesh =
-    new THREE.Mesh(extGeo,extMat);
+    new THREE.Mesh(
+      extGeo,
+      exteriorMaterial
+    );
 
   group.add(extMesh);
 
@@ -383,47 +753,58 @@ async function loadLegacy(basePath,manifestFile){
 
     const intGeoJson =
       await fetchJSON(
-        basePath + manifest.interior.geometry
+        basePath +
+        manifest.interior.geometry
       );
 
     const intGeo =
-      parseLegacyJSON(intGeoJson);
+      parseLegacyJSON(
+        intGeoJson
+      );
 
-    const intMat =
-      new THREE.MeshStandardMaterial({
+    interiorMaterial =
+      new THREE.MeshPhongMaterial({
 
-        color:0x3a3a3a,
-
-        roughness:0.5,
-
-        metalness:0.0,
+        color:0x777777,
 
         side:THREE.DoubleSide,
+
+        transparent:false,
+
+        opacity:1,
+
+        shininess:6,
 
         flatShading:false
 
       });
 
     const intMesh =
-      new THREE.Mesh(intGeo,intMat);
+      new THREE.Mesh(
+        intGeo,
+        interiorMaterial
+      );
 
     group.add(intMesh);
 
   }
 
-  group.rotation.x = -Math.PI / 2;
+  group.rotation.x =
+    -Math.PI / 2;
 
   return group;
 }
 
 async function fetchJSON(url){
 
-  const response = await fetch(url);
+  const response =
+    await fetch(url);
 
   if(!response.ok){
 
     throw new Error(
-      "No se pudo cargar:\n" + url
+      "No se pudo cargar:\n" +
+      url
     );
   }
 
@@ -432,14 +813,17 @@ async function fetchJSON(url){
 
 function parseLegacyJSON(json){
 
-  const verts = json.vertices;
+  const verts =
+    json.vertices;
 
   const uvLayer =
-    json.uvs && json.uvs[0]
+    json.uvs &&
+    json.uvs[0]
       ? json.uvs[0]
       : [];
 
-  const faces = json.faces;
+  const faces =
+    json.faces;
 
   const positions = [];
   const uvs = [];
@@ -448,24 +832,43 @@ function parseLegacyJSON(json){
 
   while(i < faces.length){
 
-    const type = faces[i++];
+    const type =
+      faces[i++];
 
-    const isQuad = !!(type & 1);
-    const hasMaterial = !!(type & 2);
-    const hasFaceUv = !!(type & 4);
-    const hasFaceVertexUv = !!(type & 8);
-    const hasFaceNormal = !!(type & 16);
-    const hasFaceVertexNormal = !!(type & 32);
-    const hasFaceColor = !!(type & 64);
-    const hasFaceVertexColor = !!(type & 128);
+    const isQuad =
+      !!(type & 1);
 
-    const nv = isQuad ? 4 : 3;
+    const hasMaterial =
+      !!(type & 2);
+
+    const hasFaceUv =
+      !!(type & 4);
+
+    const hasFaceVertexUv =
+      !!(type & 8);
+
+    const hasFaceNormal =
+      !!(type & 16);
+
+    const hasFaceVertexNormal =
+      !!(type & 32);
+
+    const hasFaceColor =
+      !!(type & 64);
+
+    const hasFaceVertexColor =
+      !!(type & 128);
+
+    const nv =
+      isQuad ? 4 : 3;
 
     const vIdx = [];
 
     for(let k=0;k<nv;k++){
 
-      vIdx.push(faces[i++]);
+      vIdx.push(
+        faces[i++]
+      );
 
     }
 
@@ -480,7 +883,9 @@ function parseLegacyJSON(json){
 
       for(let k=0;k<nv;k++){
 
-        uvIdx.push(faces[i++]);
+        uvIdx.push(
+          faces[i++]
+        );
 
       }
     }
@@ -501,15 +906,17 @@ function parseLegacyJSON(json){
 
     }
 
-    const triangles = isQuad
-      ? [[0,1,2],[0,2,3]]
-      : [[0,1,2]];
+    const triangles =
+      isQuad
+        ? [[0,1,2],[0,2,3]]
+        : [[0,1,2]];
 
     for(const tri of triangles){
 
       for(const k of tri){
 
-        const vi = vIdx[k] * 3;
+        const vi =
+          vIdx[k] * 3;
 
         positions.push(
           verts[vi],
@@ -517,9 +924,13 @@ function parseLegacyJSON(json){
           verts[vi+2]
         );
 
-        if(uvIdx && uvLayer.length){
+        if(
+          uvIdx &&
+          uvLayer.length
+        ){
 
-          const ui = uvIdx[k] * 2;
+          const ui =
+            uvIdx[k] * 2;
 
           uvs.push(
             uvLayer[ui],
@@ -556,15 +967,20 @@ function parseLegacyJSON(json){
 
   geometry.computeVertexNormals();
 
-  smoothNormalsByPosition(geometry);
+  smoothNormalsByPosition(
+    geometry
+  );
 
   geometry.computeBoundingBox();
+
   geometry.computeBoundingSphere();
 
   return geometry;
 }
 
-function smoothNormalsByPosition(geometry){
+function smoothNormalsByPosition(
+  geometry
+){
 
   const pos =
     geometry.attributes.position.array;
@@ -572,24 +988,36 @@ function smoothNormalsByPosition(geometry){
   const normal =
     geometry.attributes.normal.array;
 
-  const count = pos.length / 3;
+  const count =
+    pos.length / 3;
 
   const precision = 10000;
 
-  const groups = new Map();
+  const groups =
+    new Map();
 
   for(let i=0;i<count;i++){
 
     const x =
-      Math.round(pos[i*3] * precision);
+      Math.round(
+        pos[i*3] *
+        precision
+      );
 
     const y =
-      Math.round(pos[i*3+1] * precision);
+      Math.round(
+        pos[i*3+1] *
+        precision
+      );
 
     const z =
-      Math.round(pos[i*3+2] * precision);
+      Math.round(
+        pos[i*3+2] *
+        precision
+      );
 
-    const key = x + "_" + y + "_" + z;
+    const key =
+      x + "_" + y + "_" + z;
 
     if(!groups.has(key)){
 
@@ -598,11 +1026,13 @@ function smoothNormalsByPosition(geometry){
     }
 
     groups.get(key).push(i);
+
   }
 
   for(const indexes of groups.values()){
 
-    if(indexes.length < 2) continue;
+    if(indexes.length < 2)
+      continue;
 
     let nx = 0;
     let ny = 0;
@@ -617,7 +1047,11 @@ function smoothNormalsByPosition(geometry){
     }
 
     const len =
-      Math.sqrt(nx*nx + ny*ny + nz*nz) || 1;
+      Math.sqrt(
+        nx*nx +
+        ny*ny +
+        nz*nz
+      ) || 1;
 
     nx /= len;
     ny /= len;
@@ -641,85 +1075,125 @@ function fitToView(object){
   object.updateMatrixWorld(true);
 
   const box =
-    new THREE.Box3().setFromObject(object);
+    new THREE.Box3()
+      .setFromObject(object);
 
   const size =
-    box.getSize(new THREE.Vector3());
+    box.getSize(
+      new THREE.Vector3()
+    );
 
   const center =
-    box.getCenter(new THREE.Vector3());
+    box.getCenter(
+      new THREE.Vector3()
+    );
 
   object.position.x -= center.x;
   object.position.y -= center.y;
   object.position.z -= center.z;
 
   const maxSize =
-    Math.max(size.x,size.y,size.z);
+    Math.max(
+      size.x,
+      size.y,
+      size.z
+    );
 
   const fov =
-    camera.fov * Math.PI / 180;
+    camera.fov *
+    Math.PI / 180;
 
   let distance =
     Math.abs(
-      maxSize / 2 / Math.tan(fov / 2)
+      maxSize / 2 /
+      Math.tan(fov / 2)
     );
 
   distance *= 1.4;
 
-  camera.position.set(0,0,distance);
+  camera.position.set(
+    0,
+    0,
+    distance
+  );
 
-  camera.near = distance / 100;
+  camera.near =
+    distance / 100;
 
-  camera.far = distance * 100;
+  camera.far =
+    distance * 100;
 
   camera.updateProjectionMatrix();
 
-  controls.target.set(0,0,0);
+  controls.target.set(
+    0,
+    0,
+    0
+  );
 
   controls.update();
+
+  initialCameraPosition.copy(
+    camera.position
+  );
+
+  initialTarget.copy(
+    controls.target
+  );
 }
 
 function disposeObject(object){
 
-  object.traverse((child)=>{
+  object.traverse(
+    (child)=>{
 
-    if(child.geometry){
+      if(child.geometry){
 
-      child.geometry.dispose();
+        child.geometry.dispose();
 
-    }
+      }
 
-    if(child.material){
+      if(child.material){
 
-      const mats =
-        Array.isArray(child.material)
-          ? child.material
-          : [child.material];
+        const mats =
+          Array.isArray(
+            child.material
+          )
+            ? child.material
+            : [child.material];
 
-      mats.forEach((mat)=>{
+        mats.forEach(
+          (mat)=>{
 
-        for(const key in mat){
+            for(const key in mat){
 
-          const value = mat[key];
+              const value =
+                mat[key];
 
-          if(value && value.isTexture){
+              if(
+                value &&
+                value.isTexture
+              ){
 
-            value.dispose();
+                value.dispose();
+
+              }
+            }
+
+            mat.dispose();
 
           }
-        }
-
-        mat.dispose();
-
-      });
+        );
+      }
     }
-  });
+  );
 }
 
 function onResize(){
 
   camera.aspect =
-    window.innerWidth / window.innerHeight;
+    window.innerWidth /
+    window.innerHeight;
 
   camera.updateProjectionMatrix();
 
@@ -731,11 +1205,16 @@ function onResize(){
 
 function animate(){
 
-  requestAnimationFrame(animate);
+  requestAnimationFrame(
+    animate
+  );
 
   controls.update();
 
-  renderer.render(scene,camera);
+  renderer.render(
+    scene,
+    camera
+  );
 }
 
 </script>
