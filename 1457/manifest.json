@@ -1,0 +1,13 @@
+{
+  "formato": "legacy",
+  "codigo": "1457",
+  "exterior": {
+    "geometry": "MAILLOT MC CX UNI 1457.js",
+    "config": "MAILLOT MC CX UNI 1457.json"
+  },
+  "interior": {
+    "geometry": "MAILLOT MC CX UNI 1457-INTERIOR.js",
+    "config": "MAILLOT MC CX UNI 1457-INTERIOR.json"
+  },
+  "nombre": "MAILLOT MC CX UNI 1457"
+}
