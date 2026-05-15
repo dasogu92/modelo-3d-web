@@ -98,12 +98,20 @@
     <option value="legacy">MAILLOT MC CX UNI 1457</option>
   </select>
 
-  <button id="resetBtn">Reset vista</button>
+  <button id="resetBtn">
+    Reset vista
+  </button>
 
   <label>Textura GLB</label>
-  <input type="file" id="glbTextureInput" accept="image/*">
+
+  <input
+    type="file"
+    id="glbTextureInput"
+    accept="image/*"
+  >
 
   <label>Luz ambiente</label>
+
   <div class="row">
     <span>Intensidad</span>
     <span id="ambientVal">1.80</span>
@@ -119,6 +127,7 @@
   >
 
   <label>Luz frontal</label>
+
   <div class="row">
     <span>Intensidad</span>
     <span id="frontVal">2.20</span>
@@ -134,6 +143,7 @@
   >
 
   <label>Luz lateral</label>
+
   <div class="row">
     <span>Intensidad</span>
     <span id="sideVal">1.20</span>
@@ -149,6 +159,7 @@
   >
 
   <label>Contraluz</label>
+
   <div class="row">
     <span>Intensidad</span>
     <span id="backVal">0.80</span>
@@ -562,6 +573,7 @@ function wireUI(){
         );
 
         exteriorMaterial.needsUpdate = true;
+
       }
 
     }
@@ -578,6 +590,7 @@ function wireUI(){
         );
 
         interiorMaterial.needsUpdate = true;
+
       }
 
     }
@@ -615,7 +628,16 @@ function wireUI(){
 
               }
 
+              if(mat.color){
+
+                mat.color.set(0xffffff);
+
+              }
+
               mat.map = texture;
+
+              mat.transparent = false;
+              mat.opacity = 1;
 
               mat.needsUpdate = true;
 
@@ -647,6 +669,9 @@ async function loadSelectedModel(){
 
   glbMaterials = [];
 
+  exteriorMaterial = null;
+  interiorMaterial = null;
+
   if(currentModel){
 
     scene.remove(currentModel);
@@ -654,6 +679,7 @@ async function loadSelectedModel(){
     disposeObject(currentModel);
 
     currentModel = null;
+
   }
 
   try{
@@ -691,6 +717,7 @@ async function loadSelectedModel(){
     info.textContent =
       "Error:\n" +
       error.message;
+
   }
 }
 
@@ -711,6 +738,8 @@ function loadGLB(url){
           const obj =
             gltf.scene;
 
+          glbMaterials = [];
+
           obj.traverse(
             (child)=>{
 
@@ -718,28 +747,26 @@ function loadGLB(url){
 
                 child.frustumCulled = false;
 
-                if(child.geometry){
-
-                  child.geometry.computeVertexNormals();
-
-                }
-
                 if(child.material){
 
-                  child.material =
-                    child.material.clone();
+                  const mats =
+                    Array.isArray(
+                      child.material
+                    )
+                      ? child.material
+                      : [child.material];
 
-                  child.material.side =
-                    THREE.DoubleSide;
+                  mats.forEach(
+                    (mat)=>{
 
-                  child.material.flatShading =
-                    false;
+                      mat.side =
+                        THREE.DoubleSide;
 
-                  child.material.needsUpdate =
-                    true;
+                      mat.needsUpdate = true;
 
-                  glbMaterials.push(
-                    child.material
+                      glbMaterials.push(mat);
+
+                    }
                   );
                 }
               }
@@ -857,7 +884,7 @@ async function loadLegacy(
         interiorMaterial
       );
 
-    group.add(intMesh);
+      group.add(intMesh);
 
   }
 
@@ -878,6 +905,7 @@ async function fetchJSON(url){
       "No se pudo cargar:\n" +
       url
     );
+
   }
 
   return await response.json();
